@@ -5,13 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\InventoryItem;
 use App\Models\Grade;
+use App\Models\Classroom;
 use Illuminate\Support\Facades\DB;
 
 class InventoryItemController extends Controller
 {
     public function index()
     {
-        // Agrupamos los registros principales por el nombre del aula para el acordeón
         $itemsPorAula = InventoryItem::with('classroom.grade')
             ->get()
             ->groupBy(function ($item) {
@@ -68,17 +68,23 @@ class InventoryItemController extends Controller
         return redirect()->route('inventory.index')->with('success', 'Mobiliario eliminado correctamente.');
     }
 
-    public function dashboard()
+    public function dashboard(Request $request)
     {
-        $totalRegistros = InventoryItem::count();
-        $totalCantidad = InventoryItem::sum('cantidad');
-        
-        $cantBueno = InventoryItem::where('condicion', 'Bueno')->sum('cantidad');
-        $cantRegular = InventoryItem::where('condicion', 'Regular')->sum('cantidad');
-        $cantMalo = InventoryItem::where('condicion', 'Malo')->sum('cantidad');
+        $classroomId = $request->input('classroom_id');
 
-        // MATRIZ DE ESTADOS: Calcula cuántos buenos, regulares y malos hay POR CADA OBJETO
-        $matrizObjetos = InventoryItem::select(
+        $query = InventoryItem::query();
+        if ($classroomId) {
+            $query->where('classroom_id', $classroomId);
+        }
+
+        $totalRegistros = (clone $query)->count();
+        $totalCantidad = (clone $query)->sum('cantidad');
+        
+        $cantBueno = (clone $query)->where('condicion', 'Bueno')->sum('cantidad');
+        $cantRegular = (clone $query)->where('condicion', 'Regular')->sum('cantidad');
+        $cantMalo = (clone $query)->where('condicion', 'Malo')->sum('cantidad');
+
+        $matrizObjetos = (clone $query)->select(
                 'objeto',
                 DB::raw('SUM(CASE WHEN condicion = "Bueno" THEN cantidad ELSE 0 END) as buenas'),
                 DB::raw('SUM(CASE WHEN condicion = "Regular" THEN cantidad ELSE 0 END) as regulares'),
@@ -88,9 +94,11 @@ class InventoryItemController extends Controller
             ->groupBy('objeto')
             ->get();
 
-        // Desglose completo (Aula + Tipo de Objeto)
         $detalleAula = InventoryItem::with('classroom')
             ->select('classroom_id', 'objeto', DB::raw('SUM(cantidad) as total'))
+            ->when($classroomId, function($q) use ($classroomId) {
+                return $q->where('classroom_id', $classroomId);
+            })
             ->groupBy('classroom_id', 'objeto')
             ->get()
             ->groupBy(function ($item) {
@@ -98,6 +106,13 @@ class InventoryItemController extends Controller
             })
             ->sortKeys();
 
-        return view('inventory.dashboard', compact('totalRegistros', 'totalCantidad', 'cantBueno', 'cantRegular', 'cantMalo', 'matrizObjetos', 'detalleAula'));
+        $itemsPorAula = $detalleAula; 
+        $classroomsList = Classroom::all(); 
+        $grades = Grade::with('classrooms')->get();
+
+        return view('inventory.dashboard', compact(
+            'totalRegistros', 'totalCantidad', 'cantBueno', 'cantRegular', 'cantMalo', 
+            'matrizObjetos', 'detalleAula', 'itemsPorAula', 'classroomsList', 'classroomId', 'grades'
+        ));
     }
 }
