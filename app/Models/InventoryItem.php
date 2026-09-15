@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class InventoryItem extends Model
 {
-    protected $fillable = ['classroom_id', 'objeto', 'cantidad', 'condicion'];
+    protected $fillable = ['classroom_id', 'objeto', 'cantidad', 'condicion', 'category'];
 
     public function classroom()
     {

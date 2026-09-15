@@ -17,6 +17,12 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            
+            // --- NUEVAS COLUMNAS PARA ROLES, PERMISOS Y TEMA ---
+            $table->string('role')->default('docente'); // Ej: 'admin', 'directiva', 'bibliotecario', 'tic', 'aip'
+            $table->json('permissions')->nullable();    // Almacenará los módulos permitidos en formato JSON
+            $table->string('theme')->default('light');  // Persistencia del modo claro/oscuro por usuario
+            
             $table->rememberToken();
             $table->timestamps();
         });

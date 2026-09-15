@@ -1,221 +1,712 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full {{ auth()->check() && auth()->user()->theme === 'dark' ? 'dark bg-slate-950' : 'bg-[#F3F6F9]' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - Inventario I.E. Tungasuca</title>
+    
+    <!-- Script optimizado para el tema multiusuario desde la BD -->
+    <script>
+        if ("{{ auth()->check() && auth()->user()->theme === 'dark' }}" === "1") {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#0756A3',
+                            hover: '#064681',
+                            secondary: '#1689D4',
+                            sky: '#48B9E8',
+                            yellow: '#F5C542',
+                            dark: '#172B4D',
+                            bg: '#F3F6F9',
+                            success: '#22A06B',
+                            warning: '#F5C542',
+                            danger: '#D64545',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js & DataLabels Plugin -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Plugin para mostrar los números fijos encima de las barras -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <!-- Librería para Exportar a PDF (html2pdf.js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* EFECTO HOVER SHINE (Líneas blancas deslizantes al pasar el cursor) */
+        .hover-shine {
+            position: relative;
+            overflow: hidden;
+        }
+        .hover-shine::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 20%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(30deg);
+            transition: none;
+        }
+        .hover-shine:hover::after {
+            left: 120%;
+            transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+    </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-6 font-sans">
-    <div class="max-w-7xl mx-auto">
+<body class="bg-[#F3F6F9] dark:bg-slate-950 text-brand-dark dark:text-slate-100 min-h-screen flex flex-col md:flex-row selection:bg-brand-sky selection:text-white transition-colors duration-300 overflow-x-hidden">
+
+    <!-- PRELOADER DEDICADO DE DASHBOARD -->
+    <div id="preloader" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white dark:bg-slate-950 transition-opacity duration-500">
+        <div class="absolute w-96 h-96 bg-brand-sky/20 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute w-64 h-64 bg-brand-yellow/30 rounded-full blur-2xl animate-pulse delay-300"></div>
+
+        <div class="relative flex items-center justify-center mb-8">
+            <div class="w-28 h-28 border-4 border-brand-blue/20 border-t-brand-blue rounded-full animate-spin"></div>
+            <div class="absolute w-20 h-20 border-4 border-brand-yellow/30 border-b-brand-yellow rounded-full animate-spin [animation-duration:1.5s]"></div>
+            <div class="absolute flex items-center justify-center p-2">
+                <svg class="w-12 h-12" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50 5 L90 20 V55 C90 80 50 105 50 105 C50 105 10 80 10 55 V20 Z" fill="#0756A3" stroke="#F5C542" stroke-width="4"/>
+                    <path d="M50 8 L86 22 V53 C86 76 50 99 50 99 C50 99 14 76 14 53 V22 Z" stroke="white" stroke-width="3"/>
+                    <path d="M50 18 C53 25 57 28 50 36 C43 28 47 25 50 18 Z" fill="#F39C12"/>
+                    <path d="M50 23 C51.5 27 54 29 50 34 C46 29 48.5 27 50 23 Z" fill="#F5C542"/>
+                </svg>
+            </div>
+        </div>
         
-        <!-- Encabezado Institucional -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-6 rounded-xl shadow-sm border border-slate-200 gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-800">🏫 Sistema de Inventario Escolar</h1>
-                <p class="text-slate-500 text-sm">I.E. Tungasuca - Panel de Control y Estadísticas Generales</p>
+        <div class="text-center space-y-2 z-10">
+            <span class="px-3.5 py-1 rounded-full text-[11px] font-extrabold tracking-widest bg-brand-blue/10 dark:bg-brand-blue/30 text-brand-blue dark:text-brand-sky border border-brand-blue/20 uppercase">
+                Estadísticas & Métricas
+            </span>
+            <h2 class="text-2xl font-black text-brand-blue dark:text-white tracking-wider uppercase mt-2">I.E. TUNGASUCA</h2>
+            <p class="text-brand-secondary dark:text-slate-400 text-xs font-semibold tracking-wide flex items-center justify-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-brand-yellow animate-ping"></span>
+                Cargando métricas e inventario en vivo...
+            </p>
+        </div>
+    </div>
+
+    <!-- SIDEBAR / MENÚ LATERAL IZQUIERDO (FIJO Y ESTÁTICO) -->
+    <aside class="w-full md:w-72 bg-brand-dark dark:bg-slate-900 text-white flex flex-col justify-between p-6 shrink-0 shadow-xl border-r border-slate-800 z-40 sticky top-0 h-screen overflow-y-auto">
+        <div>
+            <!-- LOGO / CABECERA SIDEBAR -->
+            <div class="flex items-center gap-3 mb-6 pb-6 border-b border-slate-800">
+                <div class="w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center p-2 shadow-md shrink-0 border border-slate-700">
+                    <svg class="w-full h-full" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M50 5 L90 20 V55 C90 80 50 105 50 105 C50 105 10 80 10 55 V20 Z" fill="#0756A3" stroke="#F5C542" stroke-width="4"/>
+                        <path d="M50 8 L86 22 V53 C86 76 50 99 50 99 C50 99 14 76 14 53 V22 Z" stroke="white" stroke-width="3"/>
+                        <path d="M50 18 C53 25 57 28 50 36 C43 28 47 25 50 18 Z" fill="#F39C12"/>
+                        <path d="M50 23 C51.5 27 54 29 50 34 C46 29 48.5 27 50 23 Z" fill="#F5C542"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="font-black text-xs tracking-wide">I.E. TUNGASUCA</h2>
+                    <p class="text-[10px] text-brand-sky font-semibold tracking-wider uppercase">Gestión Institucional</p>
+                </div>
             </div>
 
-            <div class="flex items-center gap-3 w-full md:w-auto">
-                <!-- Selector de Aula Profesional -->
-                <form method="GET" action="{{ route('inventory.dashboard') }}" class="flex items-center gap-2">
-                    <select name="classroom_id" onchange="this.form.submit()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-sm">
-                        <option value="">📊 Vista General (Todo el Colegio)</option>
-                        @foreach($classroomsList as $room)
-                            <option value="{{ $room->id }}" {{ request('classroom_id') == $room->id ? 'selected' : '' }}>
-                                Aula: {{ $room->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </form>
+            <!-- PERFIL DE USUARIO LOGUEADO -->
+            <div class="bg-slate-800/60 dark:bg-slate-800/40 p-4 rounded-2xl mb-8 border border-slate-700/50 flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand-blue rounded-full flex items-center justify-center font-bold text-white shadow shrink-0">
+                    {{ auth()->check() ? substr(auth()->user()->name, 0, 1) : 'U' }}
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-[10px] text-slate-400">Bienvenido,</p>
+                    <p class="text-xs font-bold truncate text-white">{{ auth()->check() ? auth()->user()->name : 'Invitado' }}</p>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="text-[10px] text-emerald-400 font-medium">En línea</span>
+                    </div>
+                </div>
+            </div>
 
-                <a href="{{ route('inventory.index') }}" class="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-900 transition font-medium shadow-sm text-sm whitespace-nowrap">
-                    ⬅️ Volver al Registro
+            <!-- MÓDULOS DEL SISTEMA (MENÚ LATERAL CON EFECTO SHINE) -->
+            <div class="space-y-1.5">
+                <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-3 px-2">Módulos del Sistema</p>
+
+                <a href="{{ route('inventory.index') }}" class="hover-shine flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-all">
+                    <span>🪑</span> Mobiliario (Aulas)
+                </a>
+
+                <a href="{{ route('library.index') }}" class="hover-shine flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-all">
+                    <span>📚</span> Biblioteca Escolar
+                </a>
+
+                <a href="{{ route('tic.index') }}" class="hover-shine flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-all">
+                    <span>💻</span> Equipos TIC & AIP
+                </a>
+
+                <a href="{{ route('inventory.dashboard') }}" class="hover-shine flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-brand-blue text-white shadow-md shadow-brand-blue/20 transition-all">
+                    <span>📊</span> Dashboard Estadísticas
                 </a>
             </div>
         </div>
 
-        <!-- Tarjetas de Métricas Ejecutivas -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-600">
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total de Recursos</p>
-                <h3 class="text-3xl font-extrabold text-slate-800 mt-2">{{ $totalCantidad }}</h3>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-600">
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Buen Estado</p>
-                <h3 class="text-3xl font-extrabold text-emerald-600 mt-2">{{ $cantBueno }}</h3>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-amber-500">
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Estado Regular</p>
-                <h3 class="text-3xl font-extrabold text-amber-500 mt-2">{{ $cantRegular }}</h3>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-rose-600">
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Mal Estado</p>
-                <h3 class="text-3xl font-extrabold text-rose-600 mt-2">{{ $cantMalo }}</h3>
-            </div>
+        <!-- ACCIONES INFERIORES (ESTÁTICAS ABAJO EN EL SIDEBAR) -->
+        <div class="pt-6 border-t border-slate-800 space-y-3 mt-6">
+            <!-- Botón Cambio de Tema -->
+            <button type="button" onclick="toggleDarkMode()" class="hover-shine w-full bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl font-bold flex items-center justify-between text-xs transition cursor-pointer border border-slate-700">
+                <span class="flex items-center gap-2">☀️ Modo Visual</span>
+                <span class="text-[10px] bg-slate-700 px-2.5 py-1 rounded text-brand-sky font-mono uppercase" id="themeTextLabel">{{ auth()->check() && auth()->user()->theme === 'dark' ? 'Oscuro' : 'Claro' }}</span>
+            </button>
+
+            <!-- Botón Cerrar Sesión -->
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="hover-shine w-full bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 text-xs transition cursor-pointer border border-rose-500/20">
+                    <span>🚪</span> Cerrar Sesión
+                </button>
+            </form>
         </div>
+    </aside>
 
-        <!-- Zona de Gráficos Profesionales -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            
-            <!-- Gráfico 1: Estado Detallado por Objeto (Muestra claramente qué objeto está bueno, regular o malo) -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                <h2 class="text-base font-bold text-slate-700 mb-4 border-b pb-2">Estado por Cada Objeto y Condición</h2>
-                <div class="w-full h-80">
-                    <canvas id="graficoEstadoObjetos"></canvas>
+    <!-- CONTENEDOR PRINCIPAL A LA DERECHA -->
+    <div class="flex-grow p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
+        
+        <div id="dashboard-reporte">
+            <!-- ENCABEZADO SUPERIOR DE LA VISTA -->
+            <header class="mb-8 p-6 md:p-8 rounded-3xl bg-brand-blue dark:bg-slate-900 text-white shadow-xl shadow-brand-blue/15 flex flex-col md:flex-row justify-between items-center gap-6 relative z-30 transition-colors duration-300 border border-slate-800">
+                
+                <div class="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl">
+                    <div class="absolute -right-12 -bottom-12 w-64 h-64 bg-brand-sky/20 rounded-full blur-3xl"></div>
+                    <div class="absolute right-1/3 -top-12 w-48 h-48 bg-brand-yellow/20 rounded-full blur-2xl"></div>
                 </div>
-            </div>
-
-            <!-- Gráfico 2: Inventario Total por Objeto -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                <h2 class="text-base font-bold text-slate-700 mb-4 border-b pb-2">Inventario Total por Objeto</h2>
-                <div class="w-full h-80">
-                    <canvas id="graficoObjetos"></canvas>
+                
+                <div class="z-10 flex items-center gap-5">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-3 py-0.5 rounded-full text-[11px] font-extrabold bg-brand-yellow text-brand-dark uppercase tracking-widest shadow-sm">I.E. Tungasuca</span>
+                            <span class="text-xs text-brand-sky font-semibold tracking-wide">Panel de Métricas</span>
+                        </div>
+                        <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Estadísticas del Inventario</h1>
+                    </div>
                 </div>
-            </div>
 
-        </div>
+                <!-- FILTRO DE AULAS Y ACCIONES -->
+                <div class="flex flex-wrap items-center gap-3 z-30 relative w-full md:w-auto justify-end">
+                    
+                    <!-- DROPDOWN PERSONALIZADO DE AULAS -->
+                    <form method="GET" action="{{ route('inventory.dashboard') }}" id="formAulaFilter" class="relative w-full sm:w-auto z-50">
+                        <input type="hidden" name="classroom_id" id="inputClassroomId" value="{{ request('classroom_id') }}">
 
-        <!-- Tabla de Desglose Profesional -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 class="text-base font-bold text-slate-700 mb-4 border-b pb-2">Detalle Estructural por Aula</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-600 uppercase text-xs tracking-wider border-b">
-                            <th class="p-3">Objeto / Mobiliario</th>
-                            <th class="p-3 text-right">Cantidad Total</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 text-sm">
-                        @forelse($detalleAula as $aula => $objetos)
-                            <tr class="bg-slate-100/70">
-                                <td colspan="2" class="p-3 font-bold text-slate-800 uppercase">
-                                    🏫 Aula: {{ $aula ?: 'Sin Asignar' }}
-                                </td>
-                            </tr>
-                            @foreach($objetos as $obj)
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="p-3 pl-8 text-slate-600 font-medium">↳ {{ $obj->objeto }}</td>
-                                <td class="p-3 text-slate-800 font-bold text-right">{{ $obj->total }} unidades</td>
-                            </tr>
+                        <button type="button" onclick="toggleAulaDropdown()" id="btnAulaDropdown" class="w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-slate-800 text-brand-dark dark:text-slate-100 border border-white/30 dark:border-slate-700 rounded-2xl text-sm font-semibold focus:outline-none transition flex items-center justify-between gap-3 shadow-md cursor-pointer">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <span id="selectedAulaLabel" class="truncate">
+                                    @if(request('classroom_id'))
+                                        Aula: {{ $classroomsList->firstWhere('id', request('classroom_id'))->name ?? 'Seleccionada' }}
+                                    @else
+                                        Vista General (Todo el Colegio)
+                                    @endif
+                                </span>
+                            </div>
+                            <span class="text-brand-blue dark:text-brand-sky text-xs transition-transform duration-200" id="arrowAulaDropdown">▼</span>
+                        </button>
+
+                        <div id="menuAulaDropdown" class="hidden absolute right-0 w-full sm:w-72 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden py-1 text-slate-800 dark:text-slate-100">
+                            <button type="button" onclick="selectAula('')" class="w-full px-4 py-2.5 text-left text-sm font-medium hover:bg-brand-blue/10 dark:hover:bg-slate-800 flex items-center gap-2.5 transition cursor-pointer">
+                                <span class="font-bold truncate">🌐 Vista General (Todo el Colegio)</span>
+                            </button>
+
+                            <div class="border-t border-slate-100 dark:border-slate-800 my-1"></div>
+
+                            @foreach($classroomsList as $room)
+                                <button type="button" onclick="selectAula('{{ $room->id }}')" class="w-full px-4 py-2.5 text-left text-sm font-medium hover:bg-brand-blue/10 dark:hover:bg-slate-800 flex items-center gap-2.5 transition cursor-pointer">
+                                    <span class="text-base">🏫</span>
+                                    <span class="truncate">Aula: {{ $room->name }}</span>
+                                </button>
                             @endforeach
-                        @empty
-                            <tr>
-                                <td colspan="2" class="p-4 text-center text-slate-400">No hay registros disponibles para esta selección.</td>
+                        </div>
+                    </form>
+
+                    <a href="{{ route('inventory.index') }}" class="bg-brand-hover hover:bg-white hover:text-brand-blue dark:bg-slate-700 dark:hover:bg-slate-600 dark:hover:text-white text-white border border-white/20 px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-md text-sm whitespace-nowrap">
+                        <span>⬅️</span>
+                        <span>Volver al Registro</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- TARJETAS DE MÉTRICAS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 border-l-4 border-l-brand-blue shadow-sm hover:shadow-md transition">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider">Total de Recursos</p>
+                        <span class="p-2.5 rounded-2xl bg-brand-blue/10 dark:bg-brand-blue/30 text-brand-blue dark:text-brand-sky text-lg font-bold">📦</span>
+                    </div>
+                    <h3 class="text-4xl font-black text-brand-dark dark:text-white mt-3 font-mono counter-val" data-target="{{ $totalCantidad }}">0</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Unidades registradas</p>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 border-l-4 border-l-brand-success shadow-sm hover:shadow-md transition">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs text-brand-success font-extrabold uppercase tracking-wider">Buen Estado</p>
+                        <span class="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-brand-success text-lg">🟢</span>
+                    </div>
+                    <h3 class="text-4xl font-black text-brand-success mt-3 font-mono counter-val" data-target="{{ $cantBueno }}">0</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Operativos al 100%</p>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 border-l-4 border-l-brand-yellow shadow-sm hover:shadow-md transition">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs text-amber-600 dark:text-amber-400 font-extrabold uppercase tracking-wider">Estado Regular</p>
+                        <span class="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 text-lg">🟡</span>
+                    </div>
+                    <h3 class="text-4xl font-black text-amber-500 dark:text-amber-400 mt-3 font-mono counter-val" data-target="{{ $cantRegular }}">0</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Mantenimiento preventivo</p>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 border-l-4 border-l-brand-danger shadow-sm hover:shadow-md transition">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs text-brand-danger font-extrabold uppercase tracking-wider">Mal Estado</p>
+                        <span class="p-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-brand-danger text-lg">🔴</span>
+                    </div>
+                    <h3 class="text-4xl font-black text-brand-danger mt-3 font-mono counter-val" data-target="{{ $cantMalo }}">0</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Requieren reemplazo/reparación</p>
+                </div>
+            </div>
+
+            <!-- ZONA DE GRÁFICOS INTERACTIVOS -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm lg:col-span-2 flex flex-col justify-between transition-colors">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                        <div>
+                            <h2 class="text-base font-bold text-brand-dark dark:text-white">Estado por Objeto y Condición</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Comparativa de unidades operativas, regulares y dañadas</p>
+                        </div>
+                        <button type="button" onclick="toggleChartType()" class="text-xs font-bold text-brand-blue dark:text-brand-sky bg-brand-blue/10 dark:bg-slate-800 hover:bg-brand-blue hover:text-white border border-brand-blue/20 dark:border-slate-700 px-3 py-1.5 rounded-xl transition cursor-pointer">
+                            🔄 Alternar Vista
+                        </button>
+                    </div>
+                    <div class="w-full h-80 relative">
+                        <canvas id="graficoEstadoObjetos"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between transition-colors">
+                    <div class="mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                        <h2 class="text-base font-bold text-brand-dark dark:text-white">Salud del Inventario</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Proporción general por condición</p>
+                    </div>
+                    <div class="w-full h-64 relative flex items-center justify-center">
+                        <canvas id="graficoSaludDona"></canvas>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Analizado: <strong class="text-brand-dark dark:text-white">{{ $totalCantidad }}</strong> unidades</span>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm lg:col-span-3 flex flex-col justify-between transition-colors">
+                    <div class="mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                        <h2 class="text-base font-bold text-brand-dark dark:text-white">Inventario Total por Categoría/Objeto</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Volumen total acumulado en las instalaciones</p>
+                    </div>
+                    <div class="w-full h-80 relative">
+                        <canvas id="graficoObjetos"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLA DE DESGLOSE PROFESIONAL -->
+            <div class="bg-white dark:bg-slate-900 p-6 md:p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm transition-colors">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                        <h2 class="text-lg font-bold text-brand-dark dark:text-white tracking-wide">Detalle Estructural por Aula</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Listado jerárquico de mobiliario y recursos asignados</p>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                        <!-- Buscador en Tiempo Real -->
+                        <div class="relative flex-grow sm:flex-grow-0 sm:w-64">
+                            <input type="text" id="buscadorTabla" onkeyup="filtrarTabla()" placeholder="Buscar aula u objeto..." aria-label="Buscar en la tabla" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-brand-dark dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition">
+                            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+                        </div>
+
+                        <!-- Botón Exportar PDF -->
+                        <button type="button" onclick="exportarPDF()" class="bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-600 text-rose-600 dark:text-rose-400 hover:text-white border border-rose-200 dark:border-rose-900 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition text-xs shadow-sm cursor-pointer">
+                            <span>📄</span>
+                            <span>Exportar PDF</span>
+                        </button>
+
+                        <!-- Botón Exportar CSV -->
+                        <button type="button" onclick="exportarCSV()" class="bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-600 text-emerald-600 dark:text-emerald-400 hover:text-white border border-emerald-200 dark:border-emerald-900 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition text-xs shadow-sm cursor-pointer">
+                            <span>📊</span>
+                            <span>Exportar CSV</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                    <table class="w-full text-left border-collapse" id="tablaDetalle">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 uppercase text-[11px] font-extrabold tracking-wider border-b border-slate-200 dark:border-slate-800">
+                                <th scope="col" class="py-4 px-5">Objeto / Mobiliario</th>
+                                <th scope="col" class="py-4 px-5 text-right">Cantidad Total</th>
                             </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-brand-dark dark:text-slate-200 text-sm">
+                            @forelse($detalleAula as $aula => $objetos)
+                                <tr class="bg-slate-100/70 dark:bg-slate-800/50 bloque-aula" data-aula="{{ strtolower($aula) }}">
+                                    <td colspan="2" class="py-3 px-5 font-extrabold text-brand-blue dark:text-brand-sky uppercase tracking-wide border-y border-slate-200 dark:border-slate-800">
+                                        🏫 Aula: {{ $aula ?: 'Sin Asignar' }}
+                                    </td>
+                                </tr>
+                                @foreach($objetos as $obj)
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition fila-objeto" data-objeto="{{ strtolower($obj->objeto) }}" data-parent-aula="{{ strtolower($aula) }}">
+                                    <td class="py-3.5 px-5 pl-10 text-slate-700 dark:text-slate-300 font-medium flex items-center gap-2">
+                                        <span class="text-slate-400">↳</span>
+                                        <span>{{ $obj->objeto }}</span>
+                                    </td>
+                                    <td class="py-3.5 px-5 text-brand-dark dark:text-white font-bold text-right font-mono">
+                                        <span class="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ $obj->total }} unidades</span>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            @empty
+                                <tr id="filaSinDatos">
+                                    <td colspan="2" class="py-12 text-center text-slate-400">
+                                        <div class="text-4xl mb-2">📊</div>
+                                        <p class="text-sm">No hay datos de inventario disponibles para esta selección.</p>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
+
+        <!-- FOOTER -->
+        <footer class="mt-12 py-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-center text-xs transition-colors rounded-2xl shadow-sm">
+            <p class="font-serif italic text-brand-secondary dark:text-brand-sky text-sm mb-1">Más que una institución, una gran familia</p>
+            <p class="text-slate-400 dark:text-slate-500">© {{ date('Y') }} <strong>I.E. Tungasuca</strong> - Sistema de Gestión Escolar. Todos los derechos reservados.</p>
+        </footer>
+
     </div>
 
-    <!-- Scripts de Configuración de Chart.js -->
+    <!-- LÓGICA DE CONTROL JS -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            
-            // Registramos el plugin de datalabels para mostrar los valores exactos arriba de cada barra
+        const rawChartData = {
+            labels: {!! json_encode($nombresObjetos ?? []) !!},
+            bueno: {!! json_encode($datosBueno ?? []) !!},
+            regular: {!! json_encode($datosRegular ?? []) !!},
+            malo: {!! json_encode($datosMalo ?? []) !!},
+            totales: {!! json_encode($cantidadesObjetos ?? []) !!},
+            totalesGlobales: [
+                {{ $cantBueno ?? 0 }},
+                {{ $cantRegular ?? 0 }},
+                {{ $cantMalo ?? 0 }}
+            ]
+        };
+
+        let chartEstado, chartSalud, chartObjetos;
+        let isBarStacked = false;
+
+        function toggleAulaDropdown() {
+            const menu = document.getElementById('menuAulaDropdown');
+            const arrow = document.getElementById('arrowAulaDropdown');
+            menu.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        function selectAula(id) {
+            document.getElementById('inputClassroomId').value = id;
+            document.getElementById('formAulaFilter').submit();
+        }
+
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('formAulaFilter');
+            if (dropdown && !dropdown.contains(event.target)) {
+                document.getElementById('menuAulaDropdown')?.classList.add('hidden');
+                document.getElementById('arrowAulaDropdown')?.classList.remove('rotate-180');
+            }
+        });
+
+        // Cambio de tema persistente por usuario (Base de Datos)
+        function toggleDarkMode() {
+            const htmlElement = document.documentElement;
+            const isDark = htmlElement.classList.contains('dark');
+            const newTheme = isDark ? 'light' : 'dark';
+
+            if (isDark) {
+                htmlElement.classList.remove('dark');
+                document.getElementById('themeTextLabel').innerText = 'Claro';
+            } else {
+                htmlElement.classList.add('dark');
+                document.getElementById('themeTextLabel').innerText = 'Oscuro';
+            }
+
+            actualizarColoresGraficos(!isDark);
+
+            // Guardar preferencia en MySQL vía AJAX
+            fetch("{{ route('user.update-theme') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ theme: newTheme })
+            }).catch(error => console.error('Error al guardar el tema:', error));
+        }
+
+        function actualizarColoresGraficos(isDark) {
+            const textColor = isDark ? '#F1F5F9' : '#172B4D';
+            const gridColor = isDark ? '#334155' : '#E2E8F0';
+
+            [chartEstado, chartObjetos].forEach(chart => {
+                if (chart) {
+                    chart.options.scales.x.ticks.color = textColor;
+                    chart.options.scales.y.ticks.color = isDark ? '#94A3B8' : '#64748B';
+                    chart.options.scales.y.grid.color = gridColor;
+                    if (chart.options.plugins.legend) {
+                        chart.options.plugins.legend.labels.color = textColor;
+                    }
+                    if (chart.options.plugins.datalabels && chart.config.type !== 'doughnut') {
+                        chart.options.plugins.datalabels.color = textColor;
+                    }
+                    chart.update();
+                }
+            });
+
+            if (chartSalud) {
+                chartSalud.options.plugins.legend.labels.color = textColor;
+                chartSalud.update();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const preloader = document.getElementById('preloader');
+            if (preloader) {
+                preloader.classList.add('opacity-0');
+                setTimeout(() => {
+                    preloader.remove();
+                    iniciarContadores();
+                }, 500);
+            } else {
+                iniciarContadores();
+            }
+
+            renderizarGraficos();
+        });
+
+        function iniciarContadores() {
+            const contadores = document.querySelectorAll('.counter-val');
+            contadores.forEach(counter => {
+                const target = parseInt(counter.getAttribute('data-target')) || 0;
+                if (target === 0) {
+                    counter.innerText = '0';
+                    return;
+                }
+                
+                const duration = 800;
+                const startTime = performance.now();
+
+                function updateCounter(currentTime) {
+                    const elapsedTime = currentTime - startTime;
+                    const progress = Math.min(elapsedTime / duration, 1);
+                    counter.innerText = Math.floor(progress * target);
+
+                    if (progress < 1) {
+                        requestAnimationFrame(updateCounter);
+                    } else {
+                        counter.innerText = target;
+                    }
+                }
+                requestAnimationFrame(updateCounter);
+            });
+        }
+
+        function filtrarTabla() {
+            const query = document.getElementById('buscadorTabla').value.toLowerCase().trim();
+            const filasObjeto = document.querySelectorAll('.fila-objeto');
+            const bloquesAula = document.querySelectorAll('.bloque-aula');
+
+            filasObjeto.forEach(fila => {
+                const objeto = fila.getAttribute('data-objeto');
+                const aula = fila.getAttribute('data-parent-aula');
+
+                if (objeto.includes(query) || aula.includes(query)) {
+                    fila.classList.remove('hidden');
+                } else {
+                    fila.classList.add('hidden');
+                }
+            });
+
+            bloquesAula.forEach(bloque => {
+                const aulaName = bloque.getAttribute('data-aula');
+                let tieneVisibles = false;
+
+                filasObjeto.forEach(fila => {
+                    if (fila.getAttribute('data-parent-aula') === aulaName && !fila.classList.contains('hidden')) {
+                        tieneVisibles = true;
+                    }
+                });
+
+                if (tieneVisibles || aulaName.includes(query)) {
+                    bloque.classList.remove('hidden');
+                } else {
+                    bloque.classList.add('hidden');
+                }
+            });
+        }
+
+        function renderizarGraficos() {
             Chart.register(ChartDataLabels);
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#F1F5F9' : '#172B4D';
+            const gridColor = isDark ? '#334155' : '#E2E8F0';
 
-            const matriz = @json($matrizObjetos);
-            const labelsObjetos = matriz.map(item => item.objeto);
-            const dataBuenas = matriz.map(item => parseInt(item.buenas));
-            const dataRegulares = matriz.map(item => parseInt(item.regulares));
-            const dataMalas = matriz.map(item => parseInt(item.malas));
-            const totalesObjetos = matriz.map(item => parseInt(item.total));
-
-            // --- GRÁFICO 1: ESTADO POR CADA OBJETO (BARRAS AGRUPADAS) ---
             const ctxEstado = document.getElementById('graficoEstadoObjetos').getContext('2d');
-            new Chart(ctxEstado, {
+            chartEstado = new Chart(ctxEstado, {
                 type: 'bar',
                 data: {
-                    labels: labelsObjetos,
+                    labels: rawChartData.labels,
                     datasets: [
-                        {
-                            label: 'Buen Estado',
-                            data: dataBuenas,
-                            backgroundColor: '#059669', // Verde
-                            borderRadius: 4
-                        },
-                        {
-                            label: 'Regular',
-                            data: dataRegulares,
-                            backgroundColor: '#d97706', // Amarillo/Ámbar
-                            borderRadius: 4
-                        },
-                        {
-                            label: 'Mal Estado',
-                            data: dataMalas,
-                            backgroundColor: '#e11d48', // Rojo
-                            borderRadius: 4
-                        }
+                        { label: 'Buen Estado', data: rawChartData.bueno, backgroundColor: '#22A06B', borderRadius: 6 },
+                        { label: 'Regular', data: rawChartData.regular, backgroundColor: '#F5C542', borderRadius: 6 },
+                        { label: 'Mal Estado', data: rawChartData.malo, backgroundColor: '#D64545', borderRadius: 6 }
                     ]
                 },
-                options: { 
-                    responsive: true, 
+                options: {
+                    responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { display: true, position: 'top' },
+                    scales: {
+                        x: { stacked: isBarStacked, ticks: { color: textColor }, grid: { display: false } },
+                        y: { stacked: isBarStacked, ticks: { color: isDark ? '#94A3B8' : '#64748B' }, grid: { color: gridColor } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: textColor, font: { family: 'Plus Jakarta Sans', weight: '600' } } },
                         datalabels: {
+                            color: textColor,
                             anchor: 'end',
                             align: 'top',
-                            color: '#334155',
-                            font: {
-                                weight: 'bold',
-                                size: 11
-                            },
-                            formatter: function(value) {
-                                return value > 0 ? value : ''; // Muestra el número exacto solo si hay unidades
-                            }
+                            formatter: (val) => val > 0 ? val : ''
                         }
-                    },
-                    scales: { 
-                        x: { grid: { display: false }, ticks: { font: { weight: '600' } } },
-                        y: { beginAtZero: true, ticks: { stepSize: 2 } } 
                     }
                 }
             });
 
-            // --- GRÁFICO 2: TOTAL POR OBJETO ---
-            const ctxObjetos = document.getElementById('graficoObjetos').getContext('2d');
-            new Chart(ctxObjetos, {
-                type: 'bar',
+            const ctxSalud = document.getElementById('graficoSaludDona').getContext('2d');
+            chartSalud = new Chart(ctxSalud, {
+                type: 'doughnut',
                 data: {
-                    labels: labelsObjetos,
+                    labels: ['Buen Estado', 'Regular', 'Mal Estado'],
                     datasets: [{
-                        label: 'Total de Unidades',
-                        data: totalesObjetos,
-                        backgroundColor: '#2563eb', // Azul corporativo
-                        borderRadius: 4,
-                        barThickness: 40
+                        data: rawChartData.totalesGlobales,
+                        backgroundColor: ['#22A06B', '#F5C542', '#D64545'],
+                        borderWidth: 0
                     }]
                 },
-                options: { 
-                    responsive: true, 
+                options: {
+                    responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { display: false },
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: textColor, font: { family: 'Plus Jakarta Sans', weight: '600' } } },
                         datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            color: '#334155',
-                            font: {
-                                weight: 'bold',
-                                size: 13
+                            color: '#ffffff',
+                            font: { weight: 'bold' },
+                            formatter: (val, ctx) => {
+                                let sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                return sum > 0 ? ((val * 100) / sum).toFixed(1) + "%" : "";
                             }
                         }
-                    },
-                    scales: { 
-                        x: { grid: { display: false }, ticks: { font: { weight: '600' } } },
-                        y: { beginAtZero: true, ticks: { stepSize: 2 } }
                     }
                 }
             });
-        });
+
+            const ctxObjetos = document.getElementById('graficoObjetos').getContext('2d');
+            chartObjetos = new Chart(ctxObjetos, {
+                type: 'bar',
+                data: {
+                    labels: rawChartData.labels,
+                    datasets: [{
+                        label: 'Total Acumulado',
+                        data: rawChartData.totales,
+                        backgroundColor: '#0756A3',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: textColor }, grid: { display: false } },
+                        y: { ticks: { color: isDark ? '#94A3B8' : '#64748B' }, grid: { color: gridColor } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                            color: textColor,
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: (val) => val > 0 ? val : ''
+                        }
+                    }
+                }
+            });
+        }
+
+        function toggleChartType() {
+            isBarStacked = !isBarStacked;
+            chartEstado.options.scales.x.stacked = isBarStacked;
+            chartEstado.options.scales.y.stacked = isBarStacked;
+            chartEstado.update();
+        }
+
+        function exportarPDF() {
+            const elemento = document.getElementById('dashboard-reporte');
+            const opt = {
+                margin:       [0.3, 0.3, 0.3, 0.3],
+                filename:     'Reporte_Inventario_IE_Tungasuca.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
+            };
+            html2pdf().set(opt).from(elemento).save();
+        }
+
+        function exportarCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Aula,Objeto,Cantidad Total\n";
+
+            const filas = document.querySelectorAll('.fila-objeto');
+            filas.forEach(fila => {
+                const aula = fila.getAttribute('data-parent-aula');
+                const objeto = fila.querySelector('td:first-child span:last-child').innerText.trim();
+                const total = fila.querySelector('td:last-child span').innerText.replace('unidades', '').trim();
+                csvContent += `"${aula}","${objeto}","${total}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Inventario_IE_Tungasuca.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     </script>
 </body>
 </html>
