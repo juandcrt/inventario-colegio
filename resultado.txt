@@ -1,0 +1,77 @@
+📊 Total de filas: 3817
+📋 Ambientes únicos: 69
+
++-------------------------------+-----------+------------------------+
+| Ambiente                      | Registros | Clasificación Sugerida |
++-------------------------------+-----------+------------------------+
+| DEPOSITO                      | 466       | 📦 DEPÓSITO            |
+| ALMACÉN                       | 312       | 📦 DEPÓSITO            |
+| AREA DE CIENCIAS SOCIALES     | 177       | 🏫 AULA                |
+| AIP                           | 133       | 💻 AIP                 |
+| AULA DE INGLES                | 112       | 💻 AIP                 |
+| AULA DE INNOVACIÓN PEDAGOGICA | 95        | 💻 AIP                 |
+| LABORATORIO CTA               | 95        | 🔬 AULA ESPECIAL       |
+| AULA DE INNOVACION            | 93        | 💻 AIP                 |
+| AULA 3° C                     | 88        | 🏫 AULA                |
+| AULA 1° GRADO D               | 87        | 🏫 AULA                |
+| AULA 1° A                     | 86        | 🏫 AULA                |
+| AULA 1° E                     | 86        | 🏫 AULA                |
+| AULA 1° GRADO C               | 86        | 🏫 AULA                |
+| AULA 1° B                     | 85        | 🏫 AULA                |
+| AULA 3° B                     | 85        | 🏫 AULA                |
+| AULA 2° E                     | 83        | 🏫 AULA                |
+| AULA 2° D                     | 80        | 🏫 AULA                |
+| AULA 2° A                     | 79        | 🏫 AULA                |
+| AULA 3° D                     | 79        | 🏫 AULA                |
+| SALA DE PROFESORES            | 77        | 🏢 OFICINA             |
+| TALLER DE MATEMATICA          | 77        | 🏫 AULA                |
+| AREA DE COMUNICACION          | 75        | 🏫 AULA                |
+| AULA 5° C                     | 75        | 🏫 AULA                |
+| AULA 5° A                     | 74        | 🏫 AULA                |
+| PATIO                         | 74        | 🏫 PATIO               |
+| AULA 2° C                     | 72        | 🏫 AULA                |
+| AULA 5° B                     | 70        | 🏫 AULA                |
+| AULA 4° B                     | 69        | 🏫 AULA                |
+| AULA 4° C                     | 66        | 🏫 AULA                |
+| AULA 2° B                     | 65        | 🏫 AULA                |
+| AULA 5° D                     | 64        | 🏫 AULA                |
+| EXTERIORES                    | 61        | ❓ POR DEFINIR         |
+| PATIO CENTRAL                 | 59        | 🏫 PATIO               |
+| AULA 4° A                     | 51        | 🏫 AULA                |
+| AULA 4° D                     | 48        | 🏫 AULA                |
+| BIBLIOTECA                    | 43        | 📚 BIBLIOTECA          |
+| AULA 3° A                     | 42        | 🏫 AULA                |
+| SALA DE COORDINACION          | 35        | 🏢 OFICINA             |
+| PSICOLOGIA                    | 26        | 🏢 OFICINA             |
+| SUBDIRECCION                  | 26        | 🏢 OFICINA             |
+| LABORATORIO                   | 24        | 🔬 AULA ESPECIAL       |
+| DIRECCIÓN                     | 22        | 🏢 OFICINA             |
+| AULA TIC-MATEMATICA           | 19        | 💻 AIP                 |
+| TUTORIA                       | 17        | 🏢 OFICINA             |
+| AULA 5° GRADO A               | 11        | 🏫 AULA                |
+| EPT                           | 11        | 🏫 AULA                |
+| AULA TIC-EPT                  | 9         | 💻 AIP                 |
+| AULA DE COMPUTO               | 7         | 💻 AIP                 |
+| SECRETARIA DE DIRECCION       | 6         | 🏢 OFICINA             |
+| AUDITORIO                     | 5         | ❓ POR DEFINIR         |
+| SECRETARIA                    | 3         | 🏢 OFICINA             |
+| AULA 1RO "A"                  | 2         | 🏫 AULA                |
+| AULA 1RO "D"                  | 2         | 🏫 AULA                |
+| AULA TIC-INGLES               | 2         | 💻 AIP                 |
+| AULA TOE                      | 2         | 🏢 OFICINA             |
+| AULA 4TO "B"                  | 2         | 🏫 AULA                |
+| AULA 4TO "C"                  | 2         | 🏫 AULA                |
+| AULA 3RO "A"                  | 2         | 🏫 AULA                |
+| AULA 4TO "A"                  | 2         | 🏫 AULA                |
+| AULA 5TO "D"                  | 2         | 🏫 AULA                |
+| AULA 1RO "B"                  | 1         | 🏫 AULA                |
+| PATIO GENERAL                 | 1         | 🏫 PATIO               |
+| AULA 3RO "C"                  | 1         | 🏫 AULA                |
+| AULA 4TO "D"                  | 1         | 🏫 AULA                |
+| AULA 1RO "C"                  | 1         | 🏫 AULA                |
+| AULA 3RO "B"                  | 1         | 🏫 AULA                |
+| AULA 5TO "A"                  | 1         | 🏫 AULA                |
+| AULA 5TO "B"                  | 1         | 🏫 AULA                |
+| ALMACEN DE EQUIPOS            | 1         | 📦 DEPÓSITO            |
++-------------------------------+-----------+------------------------+
+💾 Resumen guardado en storage/app/ambientes.txt

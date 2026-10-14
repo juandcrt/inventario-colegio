@@ -6,7 +6,8 @@ use App\Http\Controllers\InventoryItemController; // Para Mobiliario
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\TicController;
 use App\Http\Controllers\UserController; // Controlador para gestionar la preferencia de tema
-use App\Http\Controllers\ProfileController; // <-- Nuevo controlador para gestionar perfiles y accesos
+use App\Http\Controllers\ProfileController; // Controlador para gestionar perfiles y accesos
+use App\Http\Controllers\DashboardController; // Controlador para el Dashboard
 
 // ==========================================
 // 1. RUTAS PÚBLICAS Y DE AUTENTICACIÓN
@@ -56,8 +57,14 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/tic/{id}', [TicController::class, 'update'])->name('tic.update');
     Route::delete('/tic/{id}', [TicController::class, 'destroy'])->name('tic.destroy');
 
-    // --- DASHBOARD E IMPORTACIÓN CSV ---
-    Route::get('/dashboard', [InventoryItemController::class, 'dashboard'])->name('inventory.dashboard');
+    // --- DASHBOARD ---
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('inventory.dashboard');
+
+    // --- LISTADO COMPLETO DE OBJETOS (NUEVA RUTA) ---
+    Route::get('/inventory/objetos', [DashboardController::class, 'objetos'])->name('inventory.objetos');
+
+    // --- IMPORTACIÓN CSV ---
+    // La importación CSV se queda aquí porque pertenece al módulo de inventario de mobiliario
     Route::post('/inventory/import-csv', [InventoryItemController::class, 'importCsv'])->name('inventory.import');
 
 });

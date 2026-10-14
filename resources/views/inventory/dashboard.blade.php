@@ -1,17 +1,20 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full {{ auth()->check() && auth()->user()->theme === 'dark' ? 'dark bg-slate-950' : 'bg-[#F3F6F9]' }}">
+<html lang="es" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - Inventario I.E. Tungasuca</title>
     
-    <!-- Script optimizado para el tema multiusuario desde la BD -->
+    <!-- Script optimizado para leer el tema desde el navegador (localStorage) sin usar la BD -->
     <script>
-        if ("{{ auth()->check() && auth()->user()->theme === 'dark' }}" === "1") {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
     </script>
 
     <!-- Tailwind CSS CDN -->
@@ -49,13 +52,13 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     
-    <!-- Librería para Exportar a PDF (html2pdf.js) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Librerías para Exportar a PDF profesional -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
 
-        /* EFECTO HOVER SHINE (Líneas blancas deslizantes al pasar el cursor) */
         .hover-shine {
             position: relative;
             overflow: hidden;
@@ -109,7 +112,7 @@
         </div>
     </div>
 
-    <!-- SIDEBAR / MENÚ LATERAL IZQUIERDO (FIJO Y ESTÁTICO) -->
+    <!-- SIDEBAR / MENÚ LATERAL IZQUIERDO -->
     <aside class="w-full md:w-72 bg-brand-dark dark:bg-slate-900 text-white flex flex-col justify-between p-6 shrink-0 shadow-xl border-r border-slate-800 z-40 sticky top-0 h-screen overflow-y-auto">
         <div>
             <!-- LOGO / CABECERA SIDEBAR -->
@@ -143,7 +146,7 @@
                 </div>
             </div>
 
-            <!-- MÓDULOS DEL SISTEMA (MENÚ LATERAL CON EFECTO SHINE) -->
+            <!-- MÓDULOS DEL SISTEMA -->
             <div class="space-y-1.5">
                 <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-3 px-2">Módulos del Sistema</p>
 
@@ -165,15 +168,13 @@
             </div>
         </div>
 
-        <!-- ACCIONES INFERIORES (ESTÁTICAS ABAJO EN EL SIDEBAR) -->
+        <!-- ACCIONES INFERIORES -->
         <div class="pt-6 border-t border-slate-800 space-y-3 mt-6">
-            <!-- Botón Cambio de Tema -->
             <button type="button" onclick="toggleDarkMode()" class="hover-shine w-full bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl font-bold flex items-center justify-between text-xs transition cursor-pointer border border-slate-700">
                 <span class="flex items-center gap-2">☀️ Modo Visual</span>
-                <span class="text-[10px] bg-slate-700 px-2.5 py-1 rounded text-brand-sky font-mono uppercase" id="themeTextLabel">{{ auth()->check() && auth()->user()->theme === 'dark' ? 'Oscuro' : 'Claro' }}</span>
+                <span class="text-[10px] bg-slate-700 px-2.5 py-1 rounded text-brand-sky font-mono uppercase" id="themeTextLabel">Claro</span>
             </button>
 
-            <!-- Botón Cerrar Sesión -->
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="hover-shine w-full bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 text-xs transition cursor-pointer border border-rose-500/20">
@@ -208,7 +209,6 @@
                 <!-- FILTRO DE AULAS Y ACCIONES -->
                 <div class="flex flex-wrap items-center gap-3 z-30 relative w-full md:w-auto justify-end">
                     
-                    <!-- DROPDOWN PERSONALIZADO DE AULAS -->
                     <form method="GET" action="{{ route('inventory.dashboard') }}" id="formAulaFilter" class="relative w-full sm:w-auto z-50">
                         <input type="hidden" name="classroom_id" id="inputClassroomId" value="{{ request('classroom_id') }}">
 
@@ -285,49 +285,61 @@
                     <h3 class="text-4xl font-black text-brand-danger mt-3 font-mono counter-val" data-target="{{ $cantMalo }}">0</h3>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Requieren reemplazo/reparación</p>
                 </div>
+        </div>
+
+            <!-- ZONA DE GRÁFICOS REDISEÑADA -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    
+    <!-- GRÁFICO 1: TOP 10 OBJETOS (BARRAS HORIZONTALES) -->
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm lg:col-span-2 flex flex-col transition-colors overflow-hidden">
+        <div class="flex flex-wrap justify-between items-center mb-4 pb-3 border-b border-slate-100 dark:border-slate-800 gap-2">
+            <div>
+                <h2 class="text-base font-bold text-brand-dark dark:text-white">Top 10 Objetos con Mayor Cantidad</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Volumen acumulado por tipo de objeto</p>
             </div>
-
-            <!-- ZONA DE GRÁFICOS INTERACTIVOS -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm lg:col-span-2 flex flex-col justify-between transition-colors">
-                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-                        <div>
-                            <h2 class="text-base font-bold text-brand-dark dark:text-white">Estado por Objeto y Condición</h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Comparativa de unidades operativas, regulares y dañadas</p>
-                        </div>
-                        <button type="button" onclick="toggleChartType()" class="text-xs font-bold text-brand-blue dark:text-brand-sky bg-brand-blue/10 dark:bg-slate-800 hover:bg-brand-blue hover:text-white border border-brand-blue/20 dark:border-slate-700 px-3 py-1.5 rounded-xl transition cursor-pointer">
-                            🔄 Alternar Vista
-                        </button>
-                    </div>
-                    <div class="w-full h-80 relative">
-                        <canvas id="graficoEstadoObjetos"></canvas>
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between transition-colors">
-                    <div class="mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-                        <h2 class="text-base font-bold text-brand-dark dark:text-white">Salud del Inventario</h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Proporción general por condición</p>
-                    </div>
-                    <div class="w-full h-64 relative flex items-center justify-center">
-                        <canvas id="graficoSaludDona"></canvas>
-                    </div>
-                    <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
-                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Analizado: <strong class="text-brand-dark dark:text-white">{{ $totalCantidad }}</strong> unidades</span>
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm lg:col-span-3 flex flex-col justify-between transition-colors">
-                    <div class="mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-                        <h2 class="text-base font-bold text-brand-dark dark:text-white">Inventario Total por Categoría/Objeto</h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Volumen total acumulado en las instalaciones</p>
-                    </div>
-                    <div class="w-full h-80 relative">
-                        <canvas id="graficoObjetos"></canvas>
-                    </div>
-                </div>
+            <div class="flex items-center gap-2">
+                <span class="px-3 py-1 rounded-full bg-brand-blue/10 text-brand-blue text-xs font-bold whitespace-nowrap">
+                    {{ $classroomId ? 'Aula Filtrada' : 'Todo el Colegio' }}
+                </span>
+                <a href="{{ route('inventory.objetos', $classroomId ? ['classroom_id' => $classroomId] : []) }}"
+                   class="hover-shine bg-brand-blue hover:bg-brand-hover text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-md whitespace-nowrap">
+                    <span>📋</span>
+                    <span>Ver todos</span>
+                </a>
             </div>
+        </div>
+        <div class="relative w-full" style="height: 380px;">
+            <canvas id="graficoTopObjetos"></canvas>
+        </div>
+    </div>
 
+    <!-- GRÁFICO 2: SALUD DEL INVENTARIO (DONA) -->
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col transition-colors overflow-hidden">
+        <div class="mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h2 class="text-base font-bold text-brand-dark dark:text-white">Salud del Inventario</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Distribución por condición</p>
+        </div>
+        <div class="relative w-full flex-1" style="min-height: 240px;">
+            <canvas id="graficoSaludDona"></canvas>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Total: <strong class="text-brand-dark dark:text-white">{{ $totalCantidad }}</strong> unidades
+            </span>
+        </div>
+    </div>
+
+    <!-- GRÁFICO 3: DISTRIBUCIÓN POR CONDICIÓN (BARRAS APILADAS) -->
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm lg:col-span-3 flex flex-col transition-colors overflow-hidden">
+        <div class="mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h2 class="text-base font-bold text-brand-dark dark:text-white">Comparativa de Condición por Objeto (Top 10)</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Bueno / Regular / Malo por cada objeto</p>
+        </div>
+        <div class="relative w-full" style="height: 380px;">
+            <canvas id="graficoCondicionesApiladas"></canvas>
+        </div>
+    </div>
+</div>
             <!-- TABLA DE DESGLOSE PROFESIONAL -->
             <div class="bg-white dark:bg-slate-900 p-6 md:p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm transition-colors">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -337,19 +349,16 @@
                     </div>
                     
                     <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                        <!-- Buscador en Tiempo Real -->
                         <div class="relative flex-grow sm:flex-grow-0 sm:w-64">
                             <input type="text" id="buscadorTabla" onkeyup="filtrarTabla()" placeholder="Buscar aula u objeto..." aria-label="Buscar en la tabla" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-brand-dark dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition">
                             <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
                         </div>
 
-                        <!-- Botón Exportar PDF -->
                         <button type="button" onclick="exportarPDF()" class="bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-600 text-rose-600 dark:text-rose-400 hover:text-white border border-rose-200 dark:border-rose-900 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition text-xs shadow-sm cursor-pointer">
                             <span>📄</span>
                             <span>Exportar PDF</span>
                         </button>
 
-                        <!-- Botón Exportar CSV -->
                         <button type="button" onclick="exportarCSV()" class="bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-600 text-emerald-600 dark:text-emerald-400 hover:text-white border border-emerald-200 dark:border-emerald-900 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition text-xs shadow-sm cursor-pointer">
                             <span>📊</span>
                             <span>Exportar CSV</span>
@@ -360,38 +369,64 @@
                 <div class="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
                     <table class="w-full text-left border-collapse" id="tablaDetalle">
                         <thead>
-                            <tr class="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 uppercase text-[11px] font-extrabold tracking-wider border-b border-slate-200 dark:border-slate-800">
-                                <th scope="col" class="py-4 px-5">Objeto / Mobiliario</th>
-                                <th scope="col" class="py-4 px-5 text-right">Cantidad Total</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-brand-dark dark:text-slate-200 text-sm">
-                            @forelse($detalleAula as $aula => $objetos)
-                                <tr class="bg-slate-100/70 dark:bg-slate-800/50 bloque-aula" data-aula="{{ strtolower($aula) }}">
-                                    <td colspan="2" class="py-3 px-5 font-extrabold text-brand-blue dark:text-brand-sky uppercase tracking-wide border-y border-slate-200 dark:border-slate-800">
-                                        🏫 Aula: {{ $aula ?: 'Sin Asignar' }}
-                                    </td>
-                                </tr>
-                                @foreach($objetos as $obj)
-                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition fila-objeto" data-objeto="{{ strtolower($obj->objeto) }}" data-parent-aula="{{ strtolower($aula) }}">
-                                    <td class="py-3.5 px-5 pl-10 text-slate-700 dark:text-slate-300 font-medium flex items-center gap-2">
-                                        <span class="text-slate-400">↳</span>
-                                        <span>{{ $obj->objeto }}</span>
-                                    </td>
-                                    <td class="py-3.5 px-5 text-brand-dark dark:text-white font-bold text-right font-mono">
-                                        <span class="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ $obj->total }} unidades</span>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            @empty
-                                <tr id="filaSinDatos">
-                                    <td colspan="2" class="py-12 text-center text-slate-400">
-                                        <div class="text-4xl mb-2">📊</div>
-                                        <p class="text-sm">No hay datos de inventario disponibles para esta selección.</p>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
+    <tr class="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 uppercase text-[11px] font-extrabold tracking-wider border-b border-slate-200 dark:border-slate-800">
+        <th scope="col" class="py-4 px-5">Objeto / Mobiliario</th>
+        <th scope="col" class="py-4 px-3 text-center">🟢 Bueno</th>
+        <th scope="col" class="py-4 px-3 text-center">🟡 Regular</th>
+        <th scope="col" class="py-4 px-3 text-center">🔴 Malo</th>
+        <th scope="col" class="py-4 px-5 text-right">Total</th>
+    </tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-brand-dark dark:text-slate-200 text-sm">
+    @forelse($detalleAula as $aula => $objetos)
+        <tr class="bg-slate-100/70 dark:bg-slate-800/50 bloque-aula" data-aula="{{ strtolower($aula) }}">
+            <td colspan="5" class="py-3 px-5 font-extrabold text-brand-blue dark:text-brand-sky uppercase tracking-wide border-y border-slate-200 dark:border-slate-800">
+                🏫 Aula / Sección: {{ $aula ?: 'Sin Asignar' }}
+            </td>
+        </tr>
+        @foreach($objetos as $obj)
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition fila-objeto"
+            data-objeto="{{ strtolower($obj->objeto) }}"
+            data-parent-aula="{{ strtolower($aula) }}">
+            <td class="py-3.5 px-5 pl-10 text-slate-700 dark:text-slate-300 font-medium flex items-center gap-2">
+                <span class="text-slate-400">↳</span>
+                <span>{{ $obj->objeto }}</span>
+            </td>
+            <td class="py-3.5 px-3 text-center">
+                @if($obj->buenas > 0)
+                    <span class="inline-block px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800">{{ $obj->buenas }}</span>
+                @else
+                    <span class="text-slate-300 dark:text-slate-600">—</span>
+                @endif
+            </td>
+            <td class="py-3.5 px-3 text-center">
+                @if($obj->regulares > 0)
+                    <span class="inline-block px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 text-xs font-bold border border-amber-200 dark:border-amber-800">{{ $obj->regulares }}</span>
+                @else
+                    <span class="text-slate-300 dark:text-slate-600">—</span>
+                @endif
+            </td>
+            <td class="py-3.5 px-3 text-center">
+                @if($obj->malas > 0)
+                    <span class="inline-block px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 text-xs font-bold border border-rose-200 dark:border-rose-800">{{ $obj->malas }}</span>
+                @else
+                    <span class="text-slate-300 dark:text-slate-600">—</span>
+                @endif
+            </td>
+            <td class="py-3.5 px-5 text-brand-dark dark:text-white font-bold text-right font-mono">
+                <span class="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ $obj->total }} uds.</span>
+            </td>
+        </tr>
+        @endforeach
+    @empty
+        <tr id="filaSinDatos">
+            <td colspan="5" class="py-12 text-center text-slate-400">
+                <div class="text-4xl mb-2">📊</div>
+                <p class="text-sm">No hay datos de inventario disponibles para esta selección.</p>
+            </td>
+        </tr>
+    @endforelse
+</tbody>
                     </table>
                 </div>
             </div>
@@ -421,7 +456,6 @@
         };
 
         let chartEstado, chartSalud, chartObjetos;
-        let isBarStacked = false;
 
         function toggleAulaDropdown() {
             const menu = document.getElementById('menuAulaDropdown');
@@ -443,57 +477,60 @@
             }
         });
 
-        // Cambio de tema persistente por usuario (Base de Datos)
+        document.addEventListener("DOMContentLoaded", () => {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            const themeLabel = document.getElementById('themeTextLabel');
+            if (themeLabel) {
+                themeLabel.innerText = currentTheme === 'dark' ? 'Oscuro' : 'Claro';
+            }
+        });
+
         function toggleDarkMode() {
             const htmlElement = document.documentElement;
             const isDark = htmlElement.classList.contains('dark');
-            const newTheme = isDark ? 'light' : 'dark';
 
             if (isDark) {
                 htmlElement.classList.remove('dark');
                 document.getElementById('themeTextLabel').innerText = 'Claro';
+                localStorage.setItem('theme', 'light');
             } else {
                 htmlElement.classList.add('dark');
                 document.getElementById('themeTextLabel').innerText = 'Oscuro';
+                localStorage.setItem('theme', 'dark');
             }
 
             actualizarColoresGraficos(!isDark);
-
-            // Guardar preferencia en MySQL vía AJAX
-            fetch("{{ route('user.update-theme') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ theme: newTheme })
-            }).catch(error => console.error('Error al guardar el tema:', error));
         }
 
         function actualizarColoresGraficos(isDark) {
-            const textColor = isDark ? '#F1F5F9' : '#172B4D';
-            const gridColor = isDark ? '#334155' : '#E2E8F0';
+    const textColor = isDark ? '#F1F5F9' : '#172B4D';
+    const gridColor = isDark ? '#334155' : '#E2E8F0';
 
-            [chartEstado, chartObjetos].forEach(chart => {
-                if (chart) {
-                    chart.options.scales.x.ticks.color = textColor;
-                    chart.options.scales.y.ticks.color = isDark ? '#94A3B8' : '#64748B';
-                    chart.options.scales.y.grid.color = gridColor;
-                    if (chart.options.plugins.legend) {
-                        chart.options.plugins.legend.labels.color = textColor;
-                    }
-                    if (chart.options.plugins.datalabels && chart.config.type !== 'doughnut') {
-                        chart.options.plugins.datalabels.color = textColor;
-                    }
-                    chart.update();
-                }
-            });
-
-            if (chartSalud) {
-                chartSalud.options.plugins.legend.labels.color = textColor;
-                chartSalud.update();
+    [chartEstado, chartObjetos].forEach(chart => {
+        if (chart) {
+            chart.options.scales.x.ticks.color = textColor;
+            chart.options.scales.y.ticks.color = isDark ? '#94A3B8' : '#64748B';
+            if (chart.options.scales.y.grid) {
+                chart.options.scales.y.grid.color = gridColor;
             }
+            if (chart.options.scales.x.grid) {
+                chart.options.scales.x.grid.color = gridColor;
+            }
+            if (chart.options.plugins.legend?.labels) {
+                chart.options.plugins.legend.labels.color = textColor;
+            }
+            if (chart.options.plugins.datalabels) {
+                chart.options.plugins.datalabels.color = textColor;
+            }
+            chart.update();
         }
+    });
+
+    if (chartSalud) {
+        chartSalud.options.plugins.legend.labels.color = textColor;
+        chartSalud.update();
+    }
+}
 
         window.addEventListener('DOMContentLoaded', () => {
             const preloader = document.getElementById('preloader');
@@ -571,142 +608,412 @@
             });
         }
 
-        function renderizarGraficos() {
-            Chart.register(ChartDataLabels);
-            const isDark = document.documentElement.classList.contains('dark');
-            const textColor = isDark ? '#F1F5F9' : '#172B4D';
-            const gridColor = isDark ? '#334155' : '#E2E8F0';
+       function renderizarGraficos() {
+    Chart.register(ChartDataLabels);
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#F1F5F9' : '#172B4D';
+    const gridColor = isDark ? '#334155' : '#E2E8F0';
 
-            const ctxEstado = document.getElementById('graficoEstadoObjetos').getContext('2d');
-            chartEstado = new Chart(ctxEstado, {
-                type: 'bar',
-                data: {
-                    labels: rawChartData.labels,
-                    datasets: [
-                        { label: 'Buen Estado', data: rawChartData.bueno, backgroundColor: '#22A06B', borderRadius: 6 },
-                        { label: 'Regular', data: rawChartData.regular, backgroundColor: '#F5C542', borderRadius: 6 },
-                        { label: 'Mal Estado', data: rawChartData.malo, backgroundColor: '#D64545', borderRadius: 6 }
-                    ]
+    // ============================================================
+    // GRÁFICO 1: TOP 10 OBJETOS (Barras horizontales)
+    // ============================================================
+    const ctxTop = document.getElementById('graficoTopObjetos').getContext('2d');
+
+    const coloresBarras = [
+        '#0756A3', '#1068BD', '#1A7AD6', '#1689D4', '#2298E0',
+        '#2FA5E6', '#48B9E8', '#5FC4EC', '#7CCFEF', '#99D9F2'
+    ];
+
+    chartObjetos = new Chart(ctxTop, {
+        type: 'bar',
+        data: {
+            labels: rawChartData.labels,
+            datasets: [{
+                label: 'Cantidad',
+                data: rawChartData.totales,
+                backgroundColor: coloresBarras.slice(0, rawChartData.labels.length),
+                borderRadius: 8,
+                borderSkipped: false,
+                barThickness: 'flex',
+                maxBarThickness: 32,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { right: 60 } },
+            scales: {
+                x: {
+                    ticks: { color: isDark ? '#94A3B8' : '#64748B', font: { size: 11, weight: '600' } },
+                    grid: { color: gridColor, drawBorder: false },
+                    beginAtZero: true
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { stacked: isBarStacked, ticks: { color: textColor }, grid: { display: false } },
-                        y: { stacked: isBarStacked, ticks: { color: isDark ? '#94A3B8' : '#64748B' }, grid: { color: gridColor } }
+                y: {
+                    ticks: {
+                        color: textColor,
+                        font: { size: 11, weight: '600' },
+                        callback: function(value) {
+                            const label = this.getLabelForValue(value);
+                            return label.length > 30 ? label.substring(0, 28) + '…' : label;
+                        }
                     },
-                    plugins: {
-                        legend: { labels: { color: textColor, font: { family: 'Plus Jakarta Sans', weight: '600' } } },
-                        datalabels: {
-                            color: textColor,
-                            anchor: 'end',
-                            align: 'top',
-                            formatter: (val) => val > 0 ? val : ''
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(23, 43, 77, 0.95)',
+                    titleFont: { size: 13, weight: 'bold' },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        title: (items) => items[0].label,
+                        label: (context) => '📦 Total: ' + context.parsed.x + ' unidades'
+                    }
+                },
+                datalabels: {
+                    color: textColor,
+                    anchor: 'end',
+                    align: 'right',
+                    offset: 6,
+                    font: { weight: 'bold', size: 12 },
+                    formatter: (val) => val > 0 ? val : ''
+                }
+            }
+        }
+    });
+
+    // ============================================================
+    // GRÁFICO 2: SALUD DEL INVENTARIO (Dona)
+    // ============================================================
+    const ctxSalud = document.getElementById('graficoSaludDona').getContext('2d');
+
+    chartSalud = new Chart(ctxSalud, {
+        type: 'doughnut',
+        data: {
+            labels: ['Bueno', 'Regular', 'Malo'],
+            datasets: [{
+                data: rawChartData.totalesGlobales,
+                backgroundColor: ['#22A06B', '#F5C542', '#D64545'],
+                borderWidth: 3,
+                borderColor: isDark ? '#0f172a' : '#ffffff',
+                hoverOffset: 12
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: textColor,
+                        font: { family: 'Plus Jakarta Sans', weight: '600', size: 12 },
+                        padding: 15,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(23, 43, 77, 0.95)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total > 0 ? ((context.parsed * 100) / total).toFixed(1) : 0;
+                            return ` ${context.label}: ${context.parsed} (${pct}%)`;
                         }
                     }
-                }
-            });
-
-            const ctxSalud = document.getElementById('graficoSaludDona').getContext('2d');
-            chartSalud = new Chart(ctxSalud, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Buen Estado', 'Regular', 'Mal Estado'],
-                    datasets: [{
-                        data: rawChartData.totalesGlobales,
-                        backgroundColor: ['#22A06B', '#F5C542', '#D64545'],
-                        borderWidth: 0
-                    }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: { position: 'bottom', labels: { color: textColor, font: { family: 'Plus Jakarta Sans', weight: '600' } } },
-                        datalabels: {
-                            color: '#ffffff',
-                            font: { weight: 'bold' },
-                            formatter: (val, ctx) => {
-                                let sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                return sum > 0 ? ((val * 100) / sum).toFixed(1) + "%" : "";
-                            }
-                        }
+                datalabels: {
+                    color: '#ffffff',
+                    font: { weight: 'bold', size: 13 },
+                    formatter: (val, ctx) => {
+                        let sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                        if (sum === 0 || val === 0) return '';
+                        return ((val * 100) / sum).toFixed(0) + "%";
                     }
                 }
-            });
+            }
+        }
+    });
 
-            const ctxObjetos = document.getElementById('graficoObjetos').getContext('2d');
-            chartObjetos = new Chart(ctxObjetos, {
-                type: 'bar',
-                data: {
-                    labels: rawChartData.labels,
-                    datasets: [{
-                        label: 'Total Acumulado',
-                        data: rawChartData.totales,
-                        backgroundColor: '#0756A3',
-                        borderRadius: 8
-                    }]
+    // ============================================================
+    // GRÁFICO 3: BARRAS APILADAS POR CONDICIÓN (Top 10)
+    // ============================================================
+    const ctxApiladas = document.getElementById('graficoCondicionesApiladas').getContext('2d');
+
+    chartEstado = new Chart(ctxApiladas, {
+        type: 'bar',
+        data: {
+            labels: rawChartData.labels,
+            datasets: [
+                {
+                    label: '🟢 Bueno',
+                    data: rawChartData.bueno,
+                    backgroundColor: '#22A06B',
+                    borderRadius: { topLeft: 6, topRight: 6 },
+                    barPercentage: 0.7,
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { ticks: { color: textColor }, grid: { display: false } },
-                        y: { ticks: { color: isDark ? '#94A3B8' : '#64748B' }, grid: { color: gridColor } }
+                {
+                    label: '🟡 Regular',
+                    data: rawChartData.regular,
+                    backgroundColor: '#F5C542',
+                    borderRadius: { topLeft: 6, topRight: 6 },
+                    barPercentage: 0.7,
+                },
+                {
+                    label: '🔴 Malo',
+                    data: rawChartData.malo,
+                    backgroundColor: '#D64545',
+                    borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 6, bottomRight: 6 },
+                    barPercentage: 0.7,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: 20 } },
+            scales: {
+                x: {
+                    stacked: true,
+                    ticks: {
+                        color: textColor,
+                        font: { size: 10, weight: '600' },
+                        maxRotation: 45,
+                        minRotation: 30,
+                        callback: function(value) {
+                            const label = this.getLabelForValue(value);
+                            return label.length > 20 ? label.substring(0, 18) + '…' : label;
+                        }
                     },
-                    plugins: {
-                        legend: { display: false },
-                        datalabels: {
-                            color: textColor,
-                            anchor: 'end',
-                            align: 'top',
-                            formatter: (val) => val > 0 ? val : ''
+                    grid: { display: false }
+                },
+                y: {
+                    stacked: true,
+                    ticks: { color: isDark ? '#94A3B8' : '#64748B', font: { size: 11, weight: '600' } },
+                    grid: { color: gridColor },
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: textColor,
+                        font: { family: 'Plus Jakarta Sans', weight: '600', size: 12 },
+                        padding: 15,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(23, 43, 77, 0.95)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        title: (items) => items[0].label,
+                        footer: (items) => {
+                            const total = items.reduce((sum, item) => sum + item.parsed.y, 0);
+                            return 'Total: ' + total + ' unidades';
                         }
                     }
+                },
+                datalabels: {
+                    color: '#ffffff',
+                    font: { weight: 'bold', size: 10 },
+                    display: (context) => context.dataset.data[context.dataIndex] > 3
                 }
-            });
+            }
         }
+    });
+}
 
-        function toggleChartType() {
-            isBarStacked = !isBarStacked;
-            chartEstado.options.scales.x.stacked = isBarStacked;
-            chartEstado.options.scales.y.stacked = isBarStacked;
-            chartEstado.update();
+        // ============================================================
+// EXPORTAR PDF PROFESIONAL CON JSPDF + AUTOTABLE
+// ============================================================
+function exportarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Encabezado
+    doc.setFillColor(7, 86, 163);
+    doc.rect(0, 0, pageWidth, 28, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('I.E. TUNGASUCA', pageWidth / 2, 12, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Reporte Oficial de Inventario y Aulas', pageWidth / 2, 19, { align: 'center' });
+
+    const fecha = new Date().toLocaleDateString('es-PE', {
+        day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+    doc.setFontSize(8);
+    doc.text(`Generado el: ${fecha}`, pageWidth - 10, 25, { align: 'right' });
+
+    // Recolectar datos
+    const filas = [];
+    let aulaActual = '';
+
+    document.querySelectorAll('#tablaDetalle tbody tr').forEach(tr => {
+        if (tr.classList.contains('bloque-aula')) {
+            const celda = tr.querySelector('td');
+            let texto = celda ? celda.textContent : '';
+            texto = texto
+                .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
+                .replace(/Aula\s*\/\s*Sección\s*:/gi, '')
+                .replace(/Aula\s*:/gi, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            aulaActual = texto || 'Sin Asignar';
+        } else if (tr.classList.contains('fila-objeto')) {
+            const celdas = tr.querySelectorAll('td');
+            if (celdas.length >= 5) {
+                const objeto = celdas[0].textContent.replace(/↳/g, '').replace(/\s+/g, ' ').trim();
+                const bueno = celdas[1].textContent.replace('—', '0').trim();
+                const regular = celdas[2].textContent.replace('—', '0').trim();
+                const malo = celdas[3].textContent.replace('—', '0').trim();
+                const total = celdas[4].textContent.replace('uds.', '').replace('unidades', '').trim();
+                filas.push([aulaActual, objeto, bueno, regular, malo, total]);
+            }
         }
+    });
 
-        function exportarPDF() {
-            const elemento = document.getElementById('dashboard-reporte');
-            const opt = {
-                margin:       [0.3, 0.3, 0.3, 0.3],
-                filename:     'Reporte_Inventario_IE_Tungasuca.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
-            };
-            html2pdf().set(opt).from(elemento).save();
+    if (filas.length === 0) {
+        doc.setTextColor(100);
+        doc.setFontSize(12);
+        doc.text('No hay datos disponibles para exportar.', pageWidth / 2, 60, { align: 'center' });
+        doc.save('Reporte_Inventario_IE_Tungasuca.pdf');
+        return;
+    }
+
+    // Tabla
+    doc.autoTable({
+        startY: 35,
+        head: [['Aula / Sección', 'Objeto / Mobiliario', 'Bueno', 'Regular', 'Malo', 'Total']],
+        body: filas,
+        theme: 'grid',
+        styles: {
+            font: 'helvetica',
+            fontSize: 8,
+            cellPadding: 2.5,
+            textColor: [23, 43, 77],
+            lineColor: [200, 200, 200],
+            lineWidth: 0.2,
+        },
+        headStyles: {
+            fillColor: [7, 86, 163],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'center',
+            fontSize: 9,
+        },
+        alternateRowStyles: {
+            fillColor: [243, 246, 249],
+        },
+        columnStyles: {
+            0: { cellWidth: 30, fontStyle: 'bold', textColor: [7, 86, 163], fontSize: 7 },
+            1: { cellWidth: 'auto' },
+            2: { cellWidth: 16, halign: 'center', textColor: [34, 160, 107], fontStyle: 'bold' },
+            3: { cellWidth: 16, halign: 'center', textColor: [200, 150, 30], fontStyle: 'bold' },
+            4: { cellWidth: 16, halign: 'center', textColor: [214, 69, 69], fontStyle: 'bold' },
+            5: { cellWidth: 16, halign: 'center', fontStyle: 'bold' },
+        },
+        didDrawPage: function () {
+            const pageCount = doc.internal.getNumberOfPages();
+            const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
+            doc.setFontSize(8);
+            doc.setTextColor(120);
+            doc.text(
+                `Página ${currentPage} de ${pageCount}  |  I.E. Tungasuca - Sistema de Gestión`,
+                pageWidth / 2,
+                doc.internal.pageSize.getHeight() - 8,
+                { align: 'center' }
+            );
         }
+    });
 
-        function exportarCSV() {
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Aula,Objeto,Cantidad Total\n";
+    doc.save('Reporte_Inventario_IE_Tungasuca.pdf');
+}
 
-            const filas = document.querySelectorAll('.fila-objeto');
-            filas.forEach(fila => {
-                const aula = fila.getAttribute('data-parent-aula');
-                const objeto = fila.querySelector('td:first-child span:last-child').innerText.trim();
-                const total = fila.querySelector('td:last-child span').innerText.replace('unidades', '').trim();
-                csvContent += `"${aula}","${objeto}","${total}"\n`;
-            });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "Inventario_IE_Tungasuca.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        // ============================================================
+// EXPORTAR CSV CORREGIDO (con BOM UTF-8 y escape correcto)
+// ============================================================
+function exportarCSV() {
+    const escaparCSV = (valor) => {
+        if (valor === null || valor === undefined) return '';
+        let str = String(valor).trim();
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            str = '"' + str.replace(/"/g, '""') + '"';
         }
+        return str;
+    };
+
+    const filas = [];
+    let aulaActual = '';
+
+    document.querySelectorAll('#tablaDetalle tbody tr').forEach(tr => {
+        if (tr.classList.contains('bloque-aula')) {
+            const celda = tr.querySelector('td');
+            let texto = celda ? celda.textContent : '';
+            texto = texto
+                .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
+                .replace(/Aula\s*\/\s*Sección\s*:/gi, '')
+                .replace(/Aula\s*:/gi, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            aulaActual = texto || 'Sin Asignar';
+        } else if (tr.classList.contains('fila-objeto')) {
+            const celdas = tr.querySelectorAll('td');
+            if (celdas.length >= 5) {
+                const objeto = celdas[0].textContent.replace(/↳/g, '').replace(/\s+/g, ' ').trim();
+                const bueno = celdas[1].textContent.replace('—', '0').trim();
+                const regular = celdas[2].textContent.replace('—', '0').trim();
+                const malo = celdas[3].textContent.replace('—', '0').trim();
+                const total = celdas[4].textContent.replace('uds.', '').replace('unidades', '').trim();
+                filas.push([aulaActual, objeto, bueno, regular, malo, total]);
+            }
+        }
+    });
+
+    if (filas.length === 0) {
+        alert('No hay datos para exportar.');
+        return;
+    }
+
+    const encabezados = ['Aula / Sección', 'Objeto / Mobiliario', 'Bueno', 'Regular', 'Malo', 'Total'];
+    let csvContent = encabezados.map(escaparCSV).join(',') + '\r\n';
+
+    filas.forEach(fila => {
+        csvContent += fila.map(escaparCSV).join(',') + '\r\n';
+    });
+
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Inventario_IE_Tungasuca_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
     </script>
 </body>
 </html>

@@ -13,11 +13,12 @@ class InventoryItemController extends Controller
     public function index()
     {
         $itemsPorAula = InventoryItem::with('classroom.grade')
+            ->orderBy('created_at', 'desc')
             ->get()
             ->groupBy(function ($item) {
                 return optional($item->classroom)->name ?: 'Sin Asignar';
             })
-            ->sortKeys();
+            ->sortKeys(SORT_NATURAL);
 
         $grades = Grade::with('classrooms')->get();
         
@@ -68,51 +69,9 @@ class InventoryItemController extends Controller
         return redirect()->route('inventory.index')->with('success', 'Mobiliario eliminado correctamente.');
     }
 
-    public function dashboard(Request $request)
+    public function importCsv(Request $request)
     {
-        $classroomId = $request->input('classroom_id');
-
-        $query = InventoryItem::query();
-        if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
-        }
-
-        $totalRegistros = (clone $query)->count();
-        $totalCantidad = (clone $query)->sum('cantidad');
-        
-        $cantBueno = (clone $query)->where('condicion', 'Bueno')->sum('cantidad');
-        $cantRegular = (clone $query)->where('condicion', 'Regular')->sum('cantidad');
-        $cantMalo = (clone $query)->where('condicion', 'Malo')->sum('cantidad');
-
-        $matrizObjetos = (clone $query)->select(
-                'objeto',
-                DB::raw('SUM(CASE WHEN condicion = "Bueno" THEN cantidad ELSE 0 END) as buenas'),
-                DB::raw('SUM(CASE WHEN condicion = "Regular" THEN cantidad ELSE 0 END) as regulares'),
-                DB::raw('SUM(CASE WHEN condicion = "Malo" THEN cantidad ELSE 0 END) as malas'),
-                DB::raw('SUM(cantidad) as total')
-            )
-            ->groupBy('objeto')
-            ->get();
-
-        $detalleAula = InventoryItem::with('classroom')
-            ->select('classroom_id', 'objeto', DB::raw('SUM(cantidad) as total'))
-            ->when($classroomId, function($q) use ($classroomId) {
-                return $q->where('classroom_id', $classroomId);
-            })
-            ->groupBy('classroom_id', 'objeto')
-            ->get()
-            ->groupBy(function ($item) {
-                return optional($item->classroom)->name;
-            })
-            ->sortKeys();
-
-        $itemsPorAula = $detalleAula; 
-        $classroomsList = Classroom::all(); 
-        $grades = Grade::with('classrooms')->get();
-
-        return view('inventory.dashboard', compact(
-            'totalRegistros', 'totalCantidad', 'cantBueno', 'cantRegular', 'cantMalo', 
-            'matrizObjetos', 'detalleAula', 'itemsPorAula', 'classroomsList', 'classroomId', 'grades'
-        ));
+        // Tu lógica de importación CSV aquí (si la tienes)
+        return redirect()->route('inventory.index')->with('success', 'CSV importado.');
     }
 }

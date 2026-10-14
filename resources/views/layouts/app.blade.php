@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-bs-theme="{{ auth()->check() ? (auth()->user()->theme ?? 'light') : 'light' }}">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,14 @@
     
     <!-- Bootstrap CSS 5.3 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <!-- SCRIPT DE INICIALIZACIÓN RÁPIDA (Evita parpadeos al cambiar de página) -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        })();
+    </script>
 </head>
 <body>
 
@@ -37,11 +45,11 @@
                 </ul>
 
                 <div class="d-flex align-items-center gap-3">
-                    <!-- BOTÓN SWITCH MODO OSCURO / CLARO (BD) -->
+                    <!-- BOTÓN SWITCH MODO OSCURO / CLARO (LOCALSTORAGE) -->
                     <div class="form-check form-switch m-0 text-white">
-                        <input class="form-check-input" type="checkbox" id="themeToggleBtn" role="switch" onclick="toggleTheme()" {{ (auth()->check() && auth()->user()->theme === 'dark') ? 'checked' : '' }}>
+                        <input class="form-check-input" type="checkbox" id="themeToggleBtn" role="switch" onclick="toggleTheme()">
                         <label class="form-check-label small" for="themeToggleBtn" id="themeLabel">
-                            {{ (auth()->check() && auth()->user()->theme === 'dark') ? 'Modo Oscuro' : 'Modo Claro' }}
+                            Modo Claro
                         </label>
                     </div>
 
@@ -65,8 +73,23 @@
     <!-- Scripts JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- SCRIPT DE INTERACCIÓN Y PERSISTENCIA EN BASE DE DATOS (MULTIUSUARIO) -->
+    <!-- SCRIPT DE INTERACCIÓN Y PERSISTENCIA LOCAL (LOCALSTORAGE) -->
     <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            const toggleBtn = document.getElementById('themeToggleBtn');
+            const toggleLabel = document.getElementById('themeLabel');
+
+            // Sincroniza el estado visual del switch al cargar la vista
+            if (currentTheme === 'dark') {
+                toggleBtn.checked = true;
+                toggleLabel.textContent = 'Modo Oscuro';
+            } else {
+                toggleBtn.checked = false;
+                toggleLabel.textContent = 'Modo Claro';
+            }
+        });
+
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-bs-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -74,21 +97,14 @@
             // Aplica el tema inmediatamente al HTML
             document.documentElement.setAttribute('data-bs-theme', newTheme);
             
+            // Guarda la preferencia en el navegador del usuario
+            localStorage.setItem('theme', newTheme);
+            
             // Actualiza la etiqueta del switch
             const toggleLabel = document.getElementById('themeLabel');
             if (toggleLabel) {
                 toggleLabel.textContent = newTheme === 'dark' ? 'Modo Oscuro' : 'Modo Claro';
             }
-            
-            // Guarda la preferencia de forma independiente en MySQL vía AJAX
-            fetch("{{ route('user.update-theme') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ theme: newTheme })
-            }).catch(error => console.error('Error al guardar el tema:', error));
         }
     </script>
 

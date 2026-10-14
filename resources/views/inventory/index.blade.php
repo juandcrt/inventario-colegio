@@ -1,17 +1,20 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full {{ auth()->check() && auth()->user()->theme === 'dark' ? 'dark bg-slate-950' : 'bg-[#F3F6F9]' }}">
+<html lang="es" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventario de Mobiliario - I.E. Tungasuca</title>
     
-    <!-- Script optimizado para el tema multiusuario desde la BD -->
+    <!-- SCRIPT DE INICIALIZACIÓN RÁPIDA (LocalStorage) -->
     <script>
-        if ("{{ auth()->check() && auth()->user()->theme === 'dark' }}" === "1") {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
     </script>
 
     <!-- Tailwind CSS CDN -->
@@ -120,7 +123,7 @@
         </div>
     </div>
 
-    <!-- SIDEBAR / MENÚ LATERAL IZQUIERDO (FIJO Y ESTÁTICO) -->
+    <!-- SIDEBAR / MENÚ LATERAL IZQUIERDO -->
     <aside class="w-full md:w-72 bg-brand-dark dark:bg-slate-900 text-white flex flex-col justify-between p-6 shrink-0 shadow-xl border-r border-slate-800 z-40 sticky top-0 h-screen overflow-y-auto">
         <div>
             <!-- LOGO / CABECERA SIDEBAR -->
@@ -154,7 +157,7 @@
                 </div>
             </div>
 
-            <!-- MÓDULOS DEL SISTEMA (MENÚ LATERAL CON EFECTO SHINE) -->
+            <!-- MÓDULOS DEL SISTEMA -->
             <div class="space-y-1.5">
                 <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-3 px-2">Módulos del Sistema</p>
 
@@ -176,12 +179,12 @@
             </div>
         </div>
 
-        <!-- ACCIONES INFERIORES (ESTÁTICAS ABAJO EN EL SIDEBAR) -->
+        <!-- ACCIONES INFERIORES -->
         <div class="pt-6 border-t border-slate-800 space-y-3 mt-6">
-            <!-- Botón Cambio de Tema -->
+            <!-- Botón Cambio de Tema Local -->
             <button type="button" onclick="toggleDarkMode()" class="hover-shine w-full bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl font-bold flex items-center justify-between text-xs transition cursor-pointer border border-slate-700">
                 <span class="flex items-center gap-2">☀️ Modo Visual</span>
-                <span class="text-[10px] bg-slate-700 px-2.5 py-1 rounded text-brand-sky font-mono uppercase" id="themeTextLabel">{{ auth()->check() && auth()->user()->theme === 'dark' ? 'Oscuro' : 'Claro' }}</span>
+                <span class="text-[10px] bg-slate-700 px-2.5 py-1 rounded text-brand-sky font-mono uppercase" id="themeTextLabel">Claro</span>
             </button>
 
             <!-- Botón Cerrar Sesión -->
@@ -330,12 +333,13 @@
                     </div>
 
                     <div class="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                        <!-- INICIO DE LA TABLA REESTRUCTURADA -->
                         <table class="w-full text-left border-collapse" id="tablaInventario">
                             <thead>
                                 <tr class="bg-slate-100/70 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 uppercase text-[11px] font-extrabold tracking-wider border-b border-slate-200 dark:border-slate-800">
                                     <th class="py-4 px-5">Objeto / Mobiliario</th>
-                                    <th class="py-4 px-5 text-center">Cantidad</th>
-                                    <th class="py-4 px-5 text-center">Estado</th>
+                                    <th class="py-4 px-5 text-center">Cantidad y Estado</th>
+                                    <th class="py-4 px-5 text-center">Fecha y Hora</th>
                                     <th class="py-4 px-5 text-center">Acciones</th>
                                 </tr>
                             </thead>
@@ -358,28 +362,42 @@
                                     <!-- Elementos del aula -->
                                     @foreach($items as $item)
                                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition fila-aula-{{ $slugAula }} item-fila" data-aula-parent="{{ $slugAula }}" data-text="{{ strtolower($item->objeto . ' ' . $aula) }}">
+                                        
+                                        <!-- 1. Objeto -->
                                         <td class="py-3.5 px-5 font-medium text-slate-800 dark:text-slate-200 pl-8 flex items-center gap-2">
                                             <span class="text-slate-400 dark:text-slate-600">└</span>
                                             <span>{{ $item->objeto }}</span>
                                         </td>
-                                        <td class="py-3.5 px-5 text-center font-bold text-slate-900 dark:text-slate-100">
-                                            <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 font-mono">{{ $item->cantidad }}</span>
-                                        </td>
+                                        
+                                        <!-- 2. Cantidad + Estado Fusionados -->
                                         <td class="py-3.5 px-5 text-center">
-                                            @if($item->condicion == 'Bueno')
-                                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Bueno
-                                                </span>
-                                            @elseif($item->condicion == 'Regular')
-                                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Regular
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Malo
-                                                </span>
-                                            @endif
+                                            <div class="flex items-center justify-center gap-3">
+                                                <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 font-mono font-bold">{{ $item->cantidad }} uds.</span>
+                                                
+                                                @if($item->condicion == 'Bueno')
+                                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Bueno
+                                                    </span>
+                                                @elseif($item->condicion == 'Regular')
+                                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Regular
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Malo
+                                                    </span>
+                                                @endif
+                                            </div>
                                         </td>
+                                        
+                                        <!-- 3. Fecha y Hora de Registro -->
+                                        <td class="py-3.5 px-5 text-center">
+                                            <span class="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 px-2 py-1 rounded-md border border-slate-100 dark:border-slate-800">
+                                                🕒 {{ $item->created_at ? $item->created_at->format('d/m/Y H:i') : 'Sin registro' }}
+                                            </span>
+                                        </td>
+                                        
+                                        <!-- 4. Acciones -->
                                         <td class="py-3.5 px-5 text-center">
                                             <form action="{{ route('inventory.destroy', $item->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este registro?');">
                                                 @csrf
@@ -401,6 +419,7 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        <!-- FIN DE LA TABLA REESTRUCTURADA -->
                     </div>
                 </div>
             </div>
@@ -415,29 +434,29 @@
 
     <!-- SCRIPTS OPTIMIZADOS -->
     <script>
-        // 0. CAMBIO DE TEMA PERSISTENTE POR USUARIO (BASE DE DATOS)
+        // 0. SINCRONIZAR TEXTO DEL BOTÓN DE TEMA AL CARGAR
+        document.addEventListener("DOMContentLoaded", () => {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            const themeLabel = document.getElementById('themeTextLabel');
+            if (themeLabel) {
+                themeLabel.innerText = currentTheme === 'dark' ? 'Oscuro' : 'Claro';
+            }
+        });
+
+        // CAMBIO DE TEMA LOCAL (LocalStorage)
         function toggleDarkMode() {
             const htmlElement = document.documentElement;
             const isDark = htmlElement.classList.contains('dark');
-            const newTheme = isDark ? 'light' : 'dark';
 
             if (isDark) {
                 htmlElement.classList.remove('dark');
                 document.getElementById('themeTextLabel').innerText = 'Claro';
+                localStorage.setItem('theme', 'light');
             } else {
                 htmlElement.classList.add('dark');
                 document.getElementById('themeTextLabel').innerText = 'Oscuro';
+                localStorage.setItem('theme', 'dark');
             }
-
-            // Guardar preferencia en MySQL vía AJAX
-            fetch("{{ route('user.update-theme') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ theme: newTheme })
-            }).catch(error => console.error('Error al guardar el tema:', error));
         }
 
         // 1. CARGA RÁPIDA DE LA PÁGINA

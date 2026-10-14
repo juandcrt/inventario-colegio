@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('grades', function (Blueprint $table) {
-            $table->id();
+            $table->increments('id'); // INT (Adiós al BIGINT)
             $table->string('name'); // Ej: Primer Grado, Segundo Grado, TIC
             $table->timestamps();
         });

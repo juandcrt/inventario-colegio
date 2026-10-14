@@ -12,72 +12,140 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Crear Cuentas de Usuario Institucionales con Roles y Permisos
+        // ==========================================
+        // 1. USUARIOS INSTITUCIONALES
+        // ==========================================
         User::updateOrCreate(
-            ['email' => 'admin@tungasuca.edu.pe'],
+            ['dni' => '40000001'],
             [
                 'name' => 'Administrador I.E. Tungasuca',
                 'password' => Hash::make('password123'),
                 'role' => 'admin',
-                'permissions' => json_encode(['inventory', 'library', 'tic']),
-                'theme' => 'light'
+                'permissions' => json_encode(['inventory', 'library', 'tic'])
             ]
         );
 
         User::updateOrCreate(
-            ['email' => 'soporte@tungasuca.edu.pe'],
+            ['dni' => '40000002'],
             [
                 'name' => 'Soporte Técnico',
                 'password' => Hash::make('soporte2026'),
                 'role' => 'directiva',
-                'permissions' => json_encode(['inventory', 'library', 'tic']),
-                'theme' => 'light'
+                'permissions' => json_encode(['inventory', 'library', 'tic'])
             ]
         );
 
         User::updateOrCreate(
-            ['email' => 'biblioteca@tungasuca.edu.pe'],
+            ['dni' => '40000003'],
             [
                 'name' => 'Encargado de Biblioteca',
                 'password' => Hash::make('12345678'),
                 'role' => 'bibliotecario',
-                'permissions' => json_encode(['library']),
-                'theme' => 'light'
+                'permissions' => json_encode(['library'])
             ]
         );
 
         User::updateOrCreate(
-            ['email' => 'tic@tungasuca.edu.pe'],
+            ['dni' => '40000004'],
             [
                 'name' => 'Encargado de Equipos TIC',
                 'password' => Hash::make('12345678'),
                 'role' => 'tic',
-                'permissions' => json_encode(['tic']),
-                'theme' => 'light'
+                'permissions' => json_encode(['tic'])
             ]
         );
 
-        // 2. Crear los Grados
-        $g1 = Grade::create(['name' => 'Primer Grado']);
-        $g2 = Grade::create(['name' => 'Segundo Grado']);
-        $g3 = Grade::create(['name' => 'Tercer Grado']);
-        $g4 = Grade::create(['name' => 'Cuarto Grado']);
-        $g5 = Grade::create(['name' => 'Quinto Grado']);
-        $gTic = Grade::create(['name' => 'Aulas de Innovación y TIC']);
+        // ==========================================
+        // 2. GRADOS
+        // ==========================================
+        $grados = [
+            'Primer Grado', 'Segundo Grado', 'Tercer Grado',
+            'Cuarto Grado', 'Quinto Grado',
+            'Aulas de Innovación y TIC',
+        ];
 
-        // 3. Crear las Secciones asociadas a cada Grado (Llaves Foráneas)
-        $g1->classrooms()->createMany([['name' => '1A'], ['name' => '1B'], ['name' => '1C'], ['name' => '1D'], ['name' => '1E']]);
-        $g2->classrooms()->createMany([['name' => '2A'], ['name' => '2B'], ['name' => '2C'], ['name' => '2D'], ['name' => '2E']]);
-        $g3->classrooms()->createMany([['name' => '3A'], ['name' => '3B'], ['name' => '3C'], ['name' => '3D']]);
-        $g4->classrooms()->createMany([['name' => '4A'], ['name' => '4B'], ['name' => '4C'], ['name' => '4D']]);
-        $g5->classrooms()->createMany([['name' => '5A'], ['name' => '5B'], ['name' => '5C'], ['name' => '5D']]);
-        $gTic->classrooms()->createMany([
-            ['name' => 'TIC EPT'],
-            ['name' => 'TIC INGLES'],
-            ['name' => 'Aula innovación IPE'],
-            ['name' => 'TIC COMUNICACIÓN'],
-            ['name' => 'TIC MATEMÁTICA'],
-            ['name' => 'TIC CIENCIAS SOCIALES']
+        $gradosIds = [];
+        foreach ($grados as $nombre) {
+            $g = Grade::firstOrCreate(['name' => $nombre]);
+            $gradosIds[$nombre] = $g->id;
+        }
+
+        // ==========================================
+        // 3. AULAS REGULARES (nombres normalizados del Excel)
+        // ==========================================
+        $aulasPorGrado = [
+            'Primer Grado'  => ['1° A', '1° B', '1° C', '1° D', '1° E'],
+            'Segundo Grado' => ['2° A', '2° B', '2° C', '2° D', '2° E'],
+            'Tercer Grado'  => ['3° A', '3° B', '3° C', '3° D'],
+            'Cuarto Grado'  => ['4° A', '4° B', '4° C', '4° D'],
+            'Quinto Grado'  => ['5° A', '5° B', '5° C', '5° D'],
+        ];
+
+        foreach ($aulasPorGrado as $grado => $aulas) {
+            foreach ($aulas as $aula) {
+                Classroom::firstOrCreate(
+                    ['name' => strtoupper($aula)],
+                    ['grade_id' => $gradosIds[$grado]]
+                );
+            }
+        }
+
+        // ==========================================
+        // 4. AULAS ESPECIALES (todas van al grado TIC o como libres)
+        // ==========================================
+        $aulasEspeciales = [
+            // AIPs
+            'AIP',
+            'AULA DE INGLES',
+            'AULA DE INNOVACIÓN PEDAGOGICA',
+            'AULA DE INNOVACION',
+            'AULA TIC-MATEMATICA',
+            'AULA TIC-EPT',
+            'AULA TIC-INGLES',
+            'AULA DE COMPUTO',
+            
+            // Áreas académicas
+            'AREA DE CIENCIAS SOCIALES',
+            'AREA DE COMUNICACION',
+            'EPT',
+            'TALLER DE MATEMATICA',
+            'LABORATORIO CTA',
+            'LABORATORIO',
+            
+            // Oficinas
+            'DIRECCIÓN',
+            'SUBDIRECCION',
+            'SECRETARIA',
+            'SECRETARIA DE DIRECCION',
+            'SALA DE PROFESORES',
+            'SALA DE COORDINACION',
+            'PSICOLOGIA',
+            'TUTORIA',
+            'AULA TOE',
+            
+            // Depósitos
+            'ALMACÉN',
+            'DEPOSITO',
+            
+            // Áreas comunes
+            'PATIO',
+            'PATIO CENTRAL',
+            'PATIO GENERAL',
+            'BIBLIOTECA',
+        ];
+
+        foreach ($aulasEspeciales as $nombre) {
+            Classroom::firstOrCreate(
+                ['name' => strtoupper($nombre)],
+                ['grade_id' => $gradosIds['Aulas de Innovación y TIC']]
+            );
+        }
+
+        // ==========================================
+        // 5. EJECUTAR EL SEEDER DEL INVENTARIO
+        // ==========================================
+        $this->call([
+            InventarioSeeder::class,
         ]);
     }
 }

@@ -8,12 +8,13 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('inventory_items', function (Blueprint $table) {
-            $table->id();
-            // LLAVE FORÁNEA que conecta el mueble con el aula específica
-            $table->foreignId('classroom_id')->constrained('classrooms')->onDelete('cascade');
-            $table->string('objeto'); // Mesas, Sillas, Ventanas, etc.
+            $table->increments('id');
+            $table->unsignedInteger('classroom_id');
+            $table->foreign('classroom_id')->references('id')->on('classrooms')->onDelete('cascade');
+            $table->string('objeto');
             $table->integer('cantidad');
-            $table->string('condicion'); // Bueno, Regular, Malo
+            $table->string('condicion');
+            $table->string('category')->nullable(); // <-- AGREGADO
             $table->timestamps();
         });
     }

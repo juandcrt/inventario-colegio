@@ -13,31 +13,28 @@ class UserSeeder extends Seeder
         // Administrador General
         User::create([
             'name' => 'Administrador General',
-            'email' => 'admin@tungasuca.edu.pe',
+            'dni' => '40000001',
             'password' => Hash::make('12345678'),
             'role' => 'admin',
-            'permissions' => json_encode(['inventory', 'library', 'tic']),
-            'theme' => 'light'
+            'permissions' => json_encode(['inventory', 'library', 'tic'])
         ]);
 
         // Encargado de Biblioteca
         User::create([
             'name' => 'Prof. Bibliotecario',
-            'email' => 'biblioteca@tungasuca.edu.pe',
+            'dni' => '40000002',
             'password' => Hash::make('12345678'),
             'role' => 'bibliotecario',
-            'permissions' => json_encode(['library']),
-            'theme' => 'light'
+            'permissions' => json_encode(['library'])
         ]);
 
         // Encargado TIC
         User::create([
             'name' => 'Prof. Soporte TIC',
-            'email' => 'tic@tungasuca.edu.pe',
+            'dni' => '40000003',
             'password' => Hash::make('12345678'),
             'role' => 'tic',
-            'permissions' => json_encode(['tic']),
-            'theme' => 'light'
+            'permissions' => json_encode(['tic'])
         ]);
     }
 }

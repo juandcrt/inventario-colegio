@@ -15,21 +15,24 @@ class LoginController extends Controller
 
     public function login(Request $request)
     {
+        // Validamos que se envíe el DNI (8 dígitos) y la contraseña
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'dni' => ['required', 'string', 'size:8'],
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials)) {
+        // Intentamos autenticar usando 'dni' en lugar de 'email'
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
             
             // Redirección al módulo principal de inventario de mobiliario
             return redirect()->intended(route('inventory.index'));
         }
 
+        // Si falla, devolvemos el error asociado al campo dni
         return back()->withErrors([
-            'email' => 'Las credenciales introducidas no coinciden con nuestros registros.',
-        ])->onlyInput('email');
+            'dni' => 'Las credenciales introducidas no coinciden con nuestros registros.',
+        ])->onlyInput('dni');
     }
 
     public function logout(Request $request)

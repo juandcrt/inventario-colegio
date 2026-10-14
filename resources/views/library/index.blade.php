@@ -1,17 +1,20 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full {{ auth()->check() && auth()->user()->theme === 'dark' ? 'dark bg-slate-950' : 'bg-[#F3F6F9]' }}">
+<html lang="es" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Módulo Biblioteca Escolar - I.E. Tungasuca</title>
     
-    <!-- Script optimizado para el tema multiusuario desde la BD -->
+    <!-- Script optimizado para el tema mediante localStorage sin usar la BD -->
     <script>
-        if ("{{ auth()->check() && auth()->user()->theme === 'dark' }}" === "1") {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
     </script>
 
     <!-- Tailwind CSS CDN -->
@@ -90,7 +93,7 @@
         </div>
     </div>
 
-    <!-- SIDEBAR / MENÚ LATERAL IZQUIERDO (FIJO Y ESTÁTICO) -->
+    <!-- SIDEBAR / MENÚ LATERAL IZQUIERDO -->
     <aside class="w-full md:w-72 bg-brand-dark dark:bg-slate-900 text-white flex flex-col justify-between p-6 shrink-0 shadow-xl border-r border-slate-800 z-40 sticky top-0 h-screen overflow-y-auto">
         <div>
             <!-- LOGO / CABECERA SIDEBAR -->
@@ -124,7 +127,7 @@
                 </div>
             </div>
 
-            <!-- MÓDULOS DEL SISTEMA (MENÚ LATERAL CON EFECTO SHINE) -->
+            <!-- MÓDULOS DEL SISTEMA -->
             <div class="space-y-1.5">
                 <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-3 px-2">Módulos del Sistema</p>
 
@@ -146,12 +149,12 @@
             </div>
         </div>
 
-        <!-- ACCIONES INFERIORES (ESTÁTICAS ABAJO EN EL SIDEBAR) -->
+        <!-- ACCIONES INFERIORES -->
         <div class="pt-6 border-t border-slate-800 space-y-3 mt-6">
-            <!-- Botón Cambio de Tema -->
+            <!-- Botón Cambio de Tema local -->
             <button type="button" onclick="toggleDarkMode()" class="hover-shine w-full bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl font-bold flex items-center justify-between text-xs transition cursor-pointer border border-slate-700">
                 <span class="flex items-center gap-2">☀️ Modo Visual</span>
-                <span class="text-[10px] bg-slate-700 px-2.5 py-1 rounded text-brand-celeste font-mono uppercase" id="themeTextLabel">{{ auth()->check() && auth()->user()->theme === 'dark' ? 'Oscuro' : 'Claro' }}</span>
+                <span class="text-[10px] bg-slate-700 px-2.5 py-1 rounded text-brand-celeste font-mono uppercase" id="themeTextLabel">Claro</span>
             </button>
 
             <!-- Botón Cerrar Sesión -->
@@ -377,29 +380,29 @@
             }
         });
 
-        // Cambio de tema persistente por usuario (Base de Datos)
+        // Sincronizar texto del botón al cargar
+        document.addEventListener("DOMContentLoaded", () => {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            const themeLabel = document.getElementById('themeTextLabel');
+            if (themeLabel) {
+                themeLabel.innerText = currentTheme === 'dark' ? 'Oscuro' : 'Claro';
+            }
+        });
+
+        // Cambio de tema local mediante navegador (localStorage)
         function toggleDarkMode() {
             const htmlElement = document.documentElement;
             const isDark = htmlElement.classList.contains('dark');
-            const newTheme = isDark ? 'light' : 'dark';
 
             if (isDark) {
                 htmlElement.classList.remove('dark');
                 document.getElementById('themeTextLabel').innerText = 'Claro';
+                localStorage.setItem('theme', 'light');
             } else {
                 htmlElement.classList.add('dark');
                 document.getElementById('themeTextLabel').innerText = 'Oscuro';
+                localStorage.setItem('theme', 'dark');
             }
-
-            // Guardar preferencia en MySQL vía AJAX
-            fetch("{{ route('user.update-theme') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ theme: newTheme })
-            }).catch(error => console.error('Error al guardar el tema:', error));
         }
 
         // Buscador Filtro
