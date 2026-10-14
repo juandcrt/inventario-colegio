@@ -164,7 +164,7 @@ class InventarioSeeder extends Seeder
             }
 
             // ========== MOBILIARIO (todo lo demás) ==========
-           $classroomId = $classroomsCache[$ambienteNormalizado] ?? null;
+        $classroomId = $classroomsCache[$ambienteNormalizado] ?? null;
 
 if (!$classroomId) {
     // Crear aula si no existe (firstOrCreate evita duplicados)
